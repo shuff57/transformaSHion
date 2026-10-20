@@ -1,4 +1,4 @@
-# Tracing Paper
+# transformaSHion: Tracing Paper
 
 A coordinate-grid tool for slides, turns and flips. Lay a sheet of tracing paper over a grid, mark points on it,
 then slide it, turn it about a center you pick, or flip it over a mirror line you pick. The tool shows where every
@@ -72,4 +72,4 @@ turn about a center that is not the origin; the kite). Set `TP_SHOTS=/some/dir` 
 
 ## License
 
-Not chosen yet.
+MIT. See `LICENSE`.
