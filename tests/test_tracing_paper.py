@@ -307,5 +307,5 @@ def test_floating_button_is_styled_outside_the_dialog(browser):
     pg.add_style_tag(path=str(INDEX.parent / "src" / "tracing-paper.css"))
     pg.evaluate("() => { const b = document.createElement('button'); b.className = 'tp-btn tp-fab'; b.textContent = 'Tracing paper'; document.body.appendChild(b); }")
     border = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-fab')).borderTopColor")
-    assert border != "rgba(0, 0, 0, 0)" and border != "", border
+    assert border == "rgb(80, 78, 73)", border          # --tp-axis; an undefined token falls back to black
     pg.close()
