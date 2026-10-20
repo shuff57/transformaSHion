@@ -163,7 +163,7 @@
     var reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     var S = {
-      pi: 0, P: null, paper: false, M: ID, traces: [], closed: false, mode: "move", snap: true,
+      pi: 0, P: null, paper: false, M: ID, traces: [], closed: false, mode: "plotshape", fig: [], figClosed: false, plotMode: "free", snap: true,
       center: null, mirror: null, pend: [], pred: [], predOk: false, history: [], log: [], drag: null, busy: false, ghost: null,
     };
 
@@ -238,15 +238,15 @@
     }
 
     ui.lay = btn("Lay tracing paper on the grid", function () { layPaper(!S.paper); });
-    ui.trace = btn("Trace the figure", traceFigure);
-    ui.closeShape = btn("Close the shape", function () { S.closed = true; draw(); });
+    ui.trace = btn("Trace my shape", traceFigure);
+    ui.closeShape = btn("Join the marks", function () { S.closed = true; draw(); });
     ui.clear = btn("Clear marks", function () { S.traces = []; S.closed = false; draw(); say("Marks cleared."); });
     ui.modes = el("div", { class: "tp-modes", role: "radiogroup", "aria-label": "What a click on the grid does" });
     ui.radios = {};
-    [["move", "Drag the paper"], ["mark", "Mark points"], ["center", "Pick a center"], ["mirror", "Pick a mirror (two points)"], ["predict", "Plot a prediction"]].forEach(function (m) {
+    [["plotshape", "Plot the shape"], ["move", "Drag the paper"], ["mark", "Mark points"], ["center", "Pick a center"], ["mirror", "Pick a mirror (two points)"], ["predict", "Plot a prediction"]].forEach(function (m) {
       var l = el("label", { class: "tp-mode" });
       var r = el("input", { type: "radio", name: id + "-mode", value: m[0] });
-      if (m[0] === "move") r.checked = true;
+      if (m[0] === "plotshape") r.checked = true;
       r.addEventListener("change", function () { S.mode = m[0]; S.pend = []; if (m[0] === "predict") showTab("check"); draw(); });
       ui.radios[m[0]] = r;
       if (m[0] === "predict") ui.predLabel = l;
@@ -255,6 +255,16 @@
     });
     ui.snapBox = el("input", { type: "checkbox", checked: true });
     ui.snapBox.addEventListener("change", function () { S.snap = ui.snapBox.checked; });
+    ui.shapeHint = el("p", { class: "tp-hint" });
+    ui.shapeIn = el("input", { type: "text", class: "tp-text", placeholder: "(x, y), (x, y), ...", "aria-label": "Your shape's corner points" });
+    ui.shapeMsg = el("p", { class: "tp-shapemsg", role: "status", "aria-live": "polite" });
+    ui.shapeIn.addEventListener("input", function () { S.fig = parsePoints(ui.shapeIn.value); ui.shapeMsg.textContent = ""; draw(); });
+    ui.shapeCheck = btn("Check my shape", doCheckShape);
+    group("The shape", [ui.shapeHint,
+      row([btn("Plot on the grid", function () { ui.radios.plotshape.checked = true; S.mode = "plotshape"; S.pend = []; draw(); say("Click the grid to plot each corner. Click a plotted corner again to remove it."); }),
+        btn("Close the shape", function () { S.figClosed = S.fig.length > 2; draw(); say(S.figClosed ? "Shape closed." : "Plot at least three corners first."); }),
+        btn("Clear the shape", function () { S.fig = []; S.figClosed = false; ui.shapeIn.value = ""; ui.shapeMsg.textContent = ""; draw(); say("Shape cleared."); })]),
+      ui.shapeIn, row([ui.shapeCheck]), ui.shapeMsg], pPaper);
     group("The paper", [row([ui.lay]), row([ui.trace, ui.closeShape, ui.clear]), ui.modes,
       el("label", { class: "tp-snap" }, [ui.snapBox, el("span", { text: "Snap clicks to grid points" })])], pPaper);
 
@@ -340,6 +350,15 @@
       S.paper = false; S.M = ID; S.traces = []; S.closed = false; S.history = []; S.log = [];
       S.center = S.P.center ? S.P.center.slice() : null; S.mirror = null; S.pend = [];
       S.drag = null; S.ghost = null;
+      S.fig = []; S.figClosed = false; S.mode = "plotshape"; S.pred = []; S.predOk = false;
+      if (ui.radios && ui.radios.plotshape) ui.radios.plotshape.checked = true;
+      var target = targetPoints();
+      S.plotMode = S.P.plot || (target.length ? "given" : "free");
+      ui.shapeIn.value = ""; ui.shapeMsg.textContent = "";
+      ui.shapeCheck.style.display = S.plotMode === "given" ? "" : "none";
+      ui.shapeHint.textContent = S.plotMode === "given"
+        ? "Plot the " + S.P.shapes.filter(function (s) { return s.role !== "ref"; }).map(function (s) { return s.name || "shape"; }).join(" and ") + ": " + target.map(pt).join(", ") + ". Click the grid for each corner in this order, then close the shape."
+        : "Plot a shape of your own: click the grid for each corner, then close the shape.";
       if (ui.sel) ui.sel.value = String(i);
       ui.title.textContent = S.P.title;
       ui.note.textContent = S.P.note;
@@ -352,7 +371,7 @@
       ui.quick.style.display = (S.P.guides || []).length ? "" : "none";
       ui.checkSel.innerHTML = "";
       (S.P.checks || []).forEach(function (c, k) { ui.checkSel.appendChild(el("option", { value: String(k), text: c.label })); });
-      var hasChecks = (S.P.checks || []).length > 0;
+      var hasChecks = (S.P.checks || []).length > 0 && S.plotMode === "given";
       panels.check.b.hidden = !hasChecks;
       if (!hasChecks && !panels.check.p.hidden) showTab("paper");
       ui.checkMsg.textContent = ""; ui.checkIn.value = ""; S.pred = []; S.predOk = false;
@@ -366,13 +385,23 @@
       S.paper = on; S.M = ID; S.history = []; S.log = []; if (!on) { S.traces = []; S.closed = false; }
       draw(); say(on ? "Tracing paper is on the grid." : "Paper picked up. Marks cleared.");
     }
+    function targetPoints() {
+      var pts = [];
+      (S.P.shapes || []).filter(function (s) { return s.role !== "ref"; }).forEach(function (s) { s.pts.forEach(function (q) { pts.push(q); }); });
+      return pts;
+    }
+    function doCheckShape() {
+      var want = targetPoints();
+      if (!S.fig.length) { ui.shapeMsg.textContent = "Plot the corners on the grid, or type them."; return; }
+      if (S.fig.length !== want.length) { ui.shapeMsg.textContent = "Plot one point for each corner (" + want.length + " points)."; return; }
+      ui.shapeMsg.textContent = samePointSet(S.fig, want) ? "Matches. Now try the paper." : "Does not match yet. Check each corner against the list.";
+    }
     function traceFigure() {
+      if (!S.fig.length) { say("Plot the shape on the grid first."); return; }
       if (!S.paper) layPaper(true);
-      var inv_ = inv(S.M), pts = [], shapes = S.P.shapes.filter(function (s) { return s.role !== "ref"; });
-      shapes.forEach(function (s) { s.pts.forEach(function (p) { pts.push(p); }); });
-      if (!pts.length) { say("This setup has no figure to trace. Use Mark points."); return; }
+      var inv_ = inv(S.M), pts = S.fig.slice();
       S.traces = pts.map(function (p) { return { uv: apply(inv_, p), at: p.slice() }; });
-      S.closed = shapes.length === 1 && shapes[0].closed !== false;
+      S.closed = S.figClosed && pts.length > 2;
       draw(); say("Traced " + pts.length + " points: " + S.traces.map(function (t, i) { return "P" + (i + 1) + " " + pt(t.at); }).join(", ") + ".");
     }
     function setMirror(def) {
@@ -470,9 +499,17 @@
         o.push(drawLineClipped(L, "tp-guide"));
       });
       P.shapes.forEach(function (s) {
-        var cls = s.role === "ref" ? "tp-ref" : "tp-pre";
-        o.push('<' + (s.closed === false ? "polyline" : "polygon") + ' class="' + cls + '" points="' + polyPts(s.pts) + '"/>');
+        if (s.role !== "ref") return;             // the figure to move is the one the student plots
+        o.push('<' + (s.closed === false ? "polyline" : "polygon") + ' class="tp-ref" points="' + polyPts(s.pts) + '"/>');
       });
+      if (S.fig.length) {
+        var closed = S.figClosed && S.fig.length > 2;
+        o.push('<' + (closed ? "polygon" : "polyline") + ' class="tp-pre" points="' + polyPts(S.fig) + '"/>');
+        S.fig.forEach(function (q, k) {
+          o.push('<circle class="tp-fv" cx="' + px(q[0]) + '" cy="' + py(q[1]) + '" r="5"/>');
+          o.push('<text class="tp-clbl" x="' + (px(q[0]) + 9) + '" y="' + (py(q[1]) - 8) + '">' + String.fromCharCode(65 + (k % 26)) + '</text>');
+        });
+      }
 
       if (S.paper) {
         var corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(function (c) { return apply(M, c); });
@@ -548,6 +585,13 @@
       } else if (S.mode === "mark") {
         if (!S.paper) { say("Lay the tracing paper on the grid first."); return; }
         S.traces.push({ uv: apply(inv(S.M), p), at: p }); draw(); say("Marked P" + S.traces.length + " at " + pt(p) + ".");
+      } else if (S.mode === "plotshape") {
+        var fh = -1;
+        S.fig.forEach(function (q, k) { if (Math.abs(q[0] - p[0]) < 1e-6 && Math.abs(q[1] - p[1]) < 1e-6) fh = k; });
+        if (fh >= 0) { S.fig.splice(fh, 1); if (S.fig.length < 3) S.figClosed = false; say("Removed the corner at " + pt(p) + "."); }
+        else { S.fig.push(p); say("Plotted corner " + String.fromCharCode(64 + ((S.fig.length - 1) % 26) + 1) + " at " + pt(p) + "."); }
+        ui.shapeMsg.textContent = ""; ui.shapeIn.value = S.fig.map(pt).join(", ");
+        draw();
       } else if (S.mode === "predict") {
         if (!(S.P.checks || []).length) return;
         var hit = -1;

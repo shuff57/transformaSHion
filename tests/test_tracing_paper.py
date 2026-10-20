@@ -86,6 +86,17 @@ def click(pg, text):
     pg.get_by_role("button", name=text).first.click()
 
 
+def plot_shape(pg):
+    """Plot the setup's own figure the way a student would, here by typing its corners."""
+    pts = pg.evaluate("() => window.tracingPaper.state().P.shapes.filter(s => s.role !== 'ref').flatMap(s => s.pts)")
+    pg.get_by_label("Your shape's corner points").fill(", ".join("(%s, %s)" % (x, y) for x, y in pts))
+
+
+def trace(pg):
+    plot_shape(pg)
+    click(pg, "Trace my shape")
+
+
 def now_points(pg):
     """The 'Now at' column as a list of (x, y) numbers."""
     cells = pg.locator(".tp-table tbody tr td:nth-child(3)").all_inner_texts()
@@ -155,7 +166,7 @@ def test_math_exact():
 def test_flip_over_mirror_and_undo(page):
     open_preset(page, "triangle-mirror")
     click(page, "Lay tracing paper")
-    click(page, "Trace the figure")
+    trace(page)
     assert now_points(page) == [(1, 2), (4, 2), (1, 6)]
     click(page, "Use x = 5")
     click(page, "Flip the paper over the mirror")
@@ -170,7 +181,7 @@ def test_flip_over_mirror_and_undo(page):
 def test_parallel_mirrors_make_a_slide_of_twice_the_gap(page):
     open_preset(page, "parallel")
     click(page, "Lay tracing paper")
-    click(page, "Trace the figure")
+    trace(page)
     click(page, "Use x = 2")
     click(page, "Flip the paper over the mirror")
     assert now_points(page) == [(5, 1), (5, 4), (3, 1)]
@@ -184,7 +195,7 @@ def test_parallel_mirrors_make_a_slide_of_twice_the_gap(page):
 def test_crossing_mirrors_order_sets_the_direction(page):
     open_preset(page, "crossing")
     click(page, "Lay tracing paper")
-    click(page, "Trace the figure")
+    trace(page)
     click(page, "Use y = 0")
     click(page, "Flip the paper over the mirror")
     page.get_by_role("button", name="y = x", exact=True).click()
@@ -207,7 +218,7 @@ def test_crossing_mirrors_order_sets_the_direction(page):
 def test_turn_about_a_center_that_is_not_the_origin(page):
     open_preset(page, "turn")
     click(page, "Lay tracing paper")
-    click(page, "Trace the figure")
+    trace(page)
     assert "(4, 2)" in page.locator(".tp-val").first.inner_text()
     click(page, "counterclockwise")
     assert now_points(page) == [(4, 5), (0, 2), (2, -1)]
@@ -219,7 +230,7 @@ def test_turn_about_a_center_that_is_not_the_origin(page):
 def test_kite_turn_and_slide_and_flip(page):
     open_preset(page, "kite")
     click(page, "Lay tracing paper")
-    click(page, "Trace the figure")
+    trace(page)
     click(page, "counterclockwise")
     got = now_points(page)
     assert got[0] == (6, 10) and got[1] == (12, 4) and got[4] == (22, 10)
@@ -283,7 +294,7 @@ def test_animated_flip_lands_exactly(browser):
     pg = Tabbed(ctx.new_page())
     open_preset(pg, "triangle-mirror")
     click(pg, "Lay tracing paper")
-    click(pg, "Trace the figure")
+    trace(pg)
     click(pg, "Use x = 5")
     click(pg, "Flip the paper over the mirror")
     assert pg.get_by_role("button", name="Undo last move").is_disabled()       # busy while folding
@@ -312,7 +323,7 @@ def test_screenshots_for_a_look(page, tmp_path_factory):
         open_preset(page, "parallel")
         page.evaluate("t => document.documentElement.setAttribute('data-theme', t)", theme)
         click(page, "Lay tracing paper")
-        click(page, "Trace the figure")
+        trace(page)
         click(page, "Use x = 2")
         click(page, "Flip the paper over the mirror")
         click(page, "Use x = 6")
@@ -423,3 +434,39 @@ def test_typing_points_plots_them_and_blank_setup_has_no_predict_mode(page):
     assert page.locator(".tp-pred").count() == 2
     open_preset(page, "blank")
     assert page.get_by_text("Plot a prediction", exact=True).is_hidden()
+
+
+def test_student_plots_the_shape_by_clicking_and_checks_it(page):
+    """Nothing is pre-plotted: the grid starts empty, the student clicks the corners, then checks the shape."""
+    open_preset(page, "triangle-mirror")
+    assert page.locator(".tp-pre").count() == 0 and page.locator(".tp-fv").count() == 0
+    assert "(1, 2), (4, 2), (1, 6)" in page.locator(".tp-hint").first.inner_text()
+    click(page, "Lay tracing paper")
+    click(page, "Trace my shape")
+    assert page.locator(".tp-live").inner_text() == "Plot the shape on the grid first."
+    for x, y in ((1, 2), (4, 2), (1, 5)):                                         # one corner wrong
+        svg_click(page, x, y)
+    assert page.locator(".tp-fv").count() == 3
+    click(page, "Check my shape")
+    assert page.locator(".tp-shapemsg").inner_text().startswith("Does not match yet")
+    svg_click(page, 1, 5)                                                         # remove it, plot the right one
+    svg_click(page, 1, 6)
+    click(page, "Close the shape")
+    assert page.locator("polygon.tp-pre").count() == 1
+    click(page, "Check my shape")
+    assert page.locator(".tp-shapemsg").inner_text().startswith("Matches")
+    click(page, "Trace my shape")
+    assert now_points(page) == [(1, 2), (4, 2), (1, 6)]
+
+
+def test_free_setup_lets_students_plot_any_shape_and_hides_checking(page):
+    open_preset(page, "blank")
+    assert page.get_by_role("button", name="Check my shape").count() == 0
+    for x, y in ((-3, 1), (2, 1), (2, 4), (-3, 4)):
+        svg_click(page, x, y)
+    click(page, "Close the shape")
+    click(page, "Lay tracing paper")
+    click(page, "Trace my shape")
+    assert now_points(page) == [(-3, 1), (2, 1), (2, 4), (-3, 4)]
+    click(page, "Slide")
+    assert now_points(page) == [(1, 1), (6, 1), (6, 4), (1, 4)]                 # the default slide is right 4

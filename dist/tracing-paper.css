@@ -64,7 +64,7 @@
 .tp-table thead th { background: var(--tp-bg); }
 .tp-moves { margin: 0 0 0.4rem; padding-left: 1.3rem; }
 .tp-none { list-style: none; margin-left: -1.3rem; opacity: 0.7; font-style: italic; }
-.tp-checkmsg { min-height: 1.4em; margin: 0.35rem 0 0; font-weight: 700; }
+.tp-checkmsg, .tp-shapemsg { min-height: 1.4em; margin: 0.35rem 0 0; font-weight: 700; }
 
 /* the drawing */
 .tp-grid { stroke: var(--tp-axis); stroke-width: 0.75; opacity: 0.45; }
@@ -74,6 +74,8 @@
 .tp-axl { fill: var(--tp-ink); font: italic 15px ui-serif, Georgia, serif; }
 .tp-guide { stroke: var(--tp-ink); stroke-width: 1.6; stroke-dasharray: 3 6; opacity: 0.5; }
 .tp-pre { fill: var(--tp-curve); fill-opacity: 0.2; stroke: var(--tp-curve); stroke-width: 2.6; stroke-linejoin: round; }
+polyline.tp-pre { fill: none; }
+.tp-fv { fill: var(--tp-curve); stroke: var(--tp-bg); stroke-width: 1.5; }
 .tp-ref { fill: none; stroke: var(--tp-axis); stroke-width: 1.8; stroke-dasharray: 5 4; }
 .tp-paper { fill: var(--tp-paper); stroke: var(--tp-accent); stroke-width: 2; stroke-dasharray: 9 5; pointer-events: none; }
 .tp-paper.tp-back { fill: var(--tp-paper-back); stroke: var(--tp-curve); }
