@@ -274,7 +274,7 @@ def test_check_never_gives_the_answer(page):
     assert "one point for each corner" in page.locator(".tp-checkmsg").inner_text()
     page.get_by_label("Your predicted image points").fill("nine, two")
     click(page, "Check")
-    assert "Type points like" in page.locator(".tp-checkmsg").inner_text()
+    assert "type them like" in page.locator(".tp-checkmsg").inner_text()
     assert page.locator(".tp-moves li").all_inner_texts() == ["none yet"]
 
 
@@ -286,7 +286,6 @@ def test_animated_flip_lands_exactly(browser):
     click(pg, "Trace the figure")
     click(pg, "Use x = 5")
     click(pg, "Flip the paper over the mirror")
-    pg.wait_for_timeout(120)
     assert pg.get_by_role("button", name="Undo last move").is_disabled()       # busy while folding
     pg.wait_for_function("() => document.querySelectorAll('.tp-moves li:not(.tp-none)').length === 1", timeout=3000)
     assert now_points(pg) == [(9, 2), (6, 2), (9, 6)]
@@ -392,3 +391,35 @@ def test_grid_stays_pinned_and_the_page_theme_wins_over_the_os(browser):
     light = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-root')).getPropertyValue('--tp-bg').trim()")
     assert dark == "#26241d" and light == "#f5f3ea", (dark, light)
     ctx.close()
+
+
+def test_plot_a_prediction_on_the_grid_and_check_before_moving(page):
+    """Plot the predicted image by clicking the grid, check it, and never touch the paper."""
+    open_preset(page, "triangle-mirror")
+    page.get_by_text("Plot a prediction", exact=True).click()
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Check"
+    for x, y in ((9, 2), (6, 2), (9, 5)):                                       # one corner is wrong
+        svg_click(page, x, y)
+    assert page.get_by_label("Your predicted image points").input_value() == "(9, 2), (6, 2), (9, 5)"
+    assert page.locator(".tp-pred").count() == 3
+    click(page, "Check")
+    assert page.locator(".tp-checkmsg").inner_text().startswith("Does not match yet")
+    svg_click(page, 9, 5)                                                       # click it again to remove it
+    assert page.locator(".tp-pred").count() == 2
+    svg_click(page, 9, 6)
+    click(page, "Check")
+    assert page.locator(".tp-checkmsg").inner_text().startswith("Matches")
+    assert page.locator(".tp-pred-ok").count() == 3
+    assert page.evaluate("() => window.tracingPaper.state().paper") is False     # all of that happened before any move
+    svg_click(page, 4, 3)
+    assert page.locator(".tp-pred-ok").count() == 0                              # changing the points clears the verdict
+    click(page, "Clear my points")
+    assert page.locator(".tp-pred").count() == 0
+
+
+def test_typing_points_plots_them_and_blank_setup_has_no_predict_mode(page):
+    open_preset(page, "triangle-mirror")
+    page.get_by_label("Your predicted image points").fill("(9, 2), (6, 2)")
+    assert page.locator(".tp-pred").count() == 2
+    open_preset(page, "blank")
+    assert page.get_by_text("Plot a prediction", exact=True).is_hidden()

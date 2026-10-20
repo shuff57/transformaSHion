@@ -164,7 +164,7 @@
 
     var S = {
       pi: 0, P: null, paper: false, M: ID, traces: [], closed: false, mode: "move", snap: true,
-      center: null, mirror: null, pend: [], history: [], log: [], drag: null, busy: false, ghost: null,
+      center: null, mirror: null, pend: [], pred: [], predOk: false, history: [], log: [], drag: null, busy: false, ghost: null,
     };
 
     var ui = {};
@@ -242,11 +242,14 @@
     ui.closeShape = btn("Close the shape", function () { S.closed = true; draw(); });
     ui.clear = btn("Clear marks", function () { S.traces = []; S.closed = false; draw(); say("Marks cleared."); });
     ui.modes = el("div", { class: "tp-modes", role: "radiogroup", "aria-label": "What a click on the grid does" });
-    [["move", "Drag the paper"], ["mark", "Mark points"], ["center", "Pick a center"], ["mirror", "Pick a mirror (two points)"]].forEach(function (m) {
+    ui.radios = {};
+    [["move", "Drag the paper"], ["mark", "Mark points"], ["center", "Pick a center"], ["mirror", "Pick a mirror (two points)"], ["predict", "Plot a prediction"]].forEach(function (m) {
       var l = el("label", { class: "tp-mode" });
       var r = el("input", { type: "radio", name: id + "-mode", value: m[0] });
       if (m[0] === "move") r.checked = true;
-      r.addEventListener("change", function () { S.mode = m[0]; S.pend = []; draw(); });
+      r.addEventListener("change", function () { S.mode = m[0]; S.pend = []; if (m[0] === "predict") showTab("check"); draw(); });
+      ui.radios[m[0]] = r;
+      if (m[0] === "predict") ui.predLabel = l;
       l.appendChild(r); l.appendChild(el("span", { text: m[1] }));
       ui.modes.appendChild(l);
     });
@@ -298,10 +301,13 @@
     ui.checkIn = el("input", { type: "text", class: "tp-text", placeholder: "(0, 0), (3, 1), (2, 4)", "aria-label": "Your predicted image points" });
     ui.checkMsg = el("p", { class: "tp-checkmsg", role: "status", "aria-live": "polite" });
     ui.checkBox.appendChild(el("h3", { text: "Check a prediction" }));
-    ui.checkBox.appendChild(el("p", { class: "tp-hint", text: "Predict first, then test it with the paper. Type one point for each corner of the figure." }));
+    ui.checkBox.appendChild(el("p", { class: "tp-hint", text: "Predict first, then test it with the paper. Plot one point for each corner of the figure on the grid, or type them." }));
     ui.checkBox.appendChild(ui.checkSel);
     ui.checkBox.appendChild(ui.checkIn);
+    ui.checkBox.appendChild(row([btn("Plot on the grid", function () { ui.radios.predict.checked = true; S.mode = "predict"; S.pend = []; draw(); say("Click the grid to plot each predicted point. Click a plotted point again to remove it."); }),
+      btn("Clear my points", function () { S.pred = []; S.predOk = false; ui.checkIn.value = ""; ui.checkMsg.textContent = ""; draw(); })]));
     ui.checkBox.appendChild(row([btn("Check", doCheck)]));
+    ui.checkIn.addEventListener("input", function () { S.pred = parsePoints(ui.checkIn.value); S.predOk = false; ui.checkMsg.textContent = ""; draw(); });
     ui.checkBox.appendChild(ui.checkMsg);
     pCheck.appendChild(ui.checkBox);
 
@@ -349,7 +355,9 @@
       var hasChecks = (S.P.checks || []).length > 0;
       panels.check.b.hidden = !hasChecks;
       if (!hasChecks && !panels.check.p.hidden) showTab("paper");
-      ui.checkMsg.textContent = ""; ui.checkIn.value = "";
+      ui.checkMsg.textContent = ""; ui.checkIn.value = ""; S.pred = []; S.predOk = false;
+      ui.predLabel.style.display = hasChecks ? "" : "none";
+      if (!hasChecks && S.mode === "predict") { S.mode = "move"; ui.radios.move.checked = true; }
       ui.svg.setAttribute("viewBox", "0 0 " + (ML + (S.P.xr[1] - S.P.xr[0]) * CELL + MR) + " " + (MT + (S.P.yr[1] - S.P.yr[0]) * CELL + MB));
       draw();
       say("Setup: " + S.P.title + ".");
@@ -421,9 +429,10 @@
     function doCheck() {
       var c = S.P.checks[+ui.checkSel.value || 0];
       var got = parsePoints(ui.checkIn.value);
-      if (!got.length) { ui.checkMsg.textContent = "Type points like (9, 2), (6, 2), (9, 6)."; return; }
-      if (got.length !== c.answer.length) { ui.checkMsg.textContent = "Type one point for each corner of the figure (" + c.answer.length + " points)."; return; }
-      ui.checkMsg.textContent = samePointSet(got, c.answer)
+      if (!got.length) { ui.checkMsg.textContent = "Plot your points on the grid, or type them like (9, 2), (6, 2), (9, 6)."; return; }
+      if (got.length !== c.answer.length) { ui.checkMsg.textContent = "Plot one point for each corner of the figure (" + c.answer.length + " points)."; return; }
+      S.predOk = samePointSet(got, c.answer); draw();
+      ui.checkMsg.textContent = S.predOk
         ? "Matches. Test it with the paper to see why."
         : "Does not match yet. Fold or move the paper to test your prediction.";
     }
@@ -488,6 +497,10 @@
         o.push('<circle class="tp-center" cx="' + px(S.center[0]) + '" cy="' + py(S.center[1]) + '" r="8"/>');
         o.push('<text class="tp-clbl" style="text-anchor:end" x="' + (px(S.center[0]) - 12) + '" y="' + (py(S.center[1]) - 10) + '">center</text>');
       }
+      S.pred.forEach(function (q, k) {
+        o.push('<circle class="tp-pred' + (S.predOk ? " tp-pred-ok" : "") + '" cx="' + px(q[0]) + '" cy="' + py(q[1]) + '" r="7"/>');
+        o.push('<text class="tp-clbl" x="' + (px(q[0]) + 11) + '" y="' + (py(q[1]) - 9) + '">Q' + (k + 1) + '</text>');
+      });
       ui.svg.innerHTML = o.join("");
       refresh();
     }
@@ -535,6 +548,15 @@
       } else if (S.mode === "mark") {
         if (!S.paper) { say("Lay the tracing paper on the grid first."); return; }
         S.traces.push({ uv: apply(inv(S.M), p), at: p }); draw(); say("Marked P" + S.traces.length + " at " + pt(p) + ".");
+      } else if (S.mode === "predict") {
+        if (!(S.P.checks || []).length) return;
+        var hit = -1;
+        S.pred.forEach(function (q, k) { if (Math.abs(q[0] - p[0]) < 1e-6 && Math.abs(q[1] - p[1]) < 1e-6) hit = k; });
+        if (hit >= 0) { S.pred.splice(hit, 1); say("Removed the point at " + pt(p) + "."); }
+        else { S.pred.push(p); say("Plotted Q" + S.pred.length + " at " + pt(p) + "."); }
+        S.predOk = false; ui.checkMsg.textContent = "";
+        ui.checkIn.value = S.pred.map(pt).join(", ");
+        draw();
       } else if (S.mode === "center") {
         S.center = p; showTab("turn"); draw(); say("Center: " + pt(p) + ".");
       } else if (S.mode === "mirror") {

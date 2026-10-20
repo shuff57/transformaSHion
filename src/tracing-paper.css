@@ -86,6 +86,8 @@ polyline.tp-mark { fill: none; }
 .tp-mirror { stroke: var(--tp-ink); stroke-width: 2.6; stroke-dasharray: 10 6; }
 .tp-pend { fill: none; stroke: var(--tp-ink); stroke-width: 2.4; }
 .tp-center { fill: var(--tp-bg); stroke: var(--tp-ink); stroke-width: 2.6; }
+.tp-pred { fill: var(--tp-bg); stroke: var(--tp-curve); stroke-width: 2.6; stroke-dasharray: 3 2.5; }
+.tp-pred.tp-pred-ok { fill: var(--tp-curve); stroke-dasharray: none; }
 .tp-clbl { fill: var(--tp-curve); font: 700 13px ui-serif, Georgia, serif; }
 
 /* modal */
