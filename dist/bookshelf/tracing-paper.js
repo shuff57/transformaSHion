@@ -627,7 +627,8 @@
  * It adds a floating "Tracing paper" button, and opens the tool from any link or element in the page:
  *   <a href="#tracing-paper">  or  <a href="#tracing-paper:parallel">   (the part after the colon picks a preset)
  *   <button data-tracing-paper data-tracing-preset="parallel">
- * A page without the plugin just has a harmless in-page link.
+ *   <div class="tp-inline" data-tracing-preset="parallel"></div>    the tool, built into the page right where the div sits
+ * A page without the plugin just has a harmless in-page link and an empty div.
  */
 (function () {
   "use strict";
@@ -640,6 +641,13 @@
         if (isOpen) return;
         isOpen = true;
         window.TracingPaper.openModal({ presets: presets, preset: id, onClose: function () { isOpen = false; } });
+      }
+      var inlineHosts = document.querySelectorAll(".tp-inline");
+      for (var i = 0; i < inlineHosts.length; i++) {
+        var h = inlineHosts[i];
+        if (h.getAttribute("data-tp-mounted")) continue;
+        h.setAttribute("data-tp-mounted", "1");
+        window.TracingPaper.mount(h, { presets: presets, preset: h.getAttribute("data-tracing-preset") || undefined });
       }
       var fab = document.createElement("button");
       fab.type = "button"; fab.className = "tp-btn tp-fab"; fab.textContent = "Tracing paper";

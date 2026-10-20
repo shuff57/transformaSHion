@@ -79,3 +79,6 @@ polyline.tp-mark { fill: none; }
 .tp-fab { position: fixed; right: 1rem; bottom: 1rem; z-index: 9000; }
 @media (pointer: coarse) { .tp-btn, .tp-num, .tp-sel, .tp-text { min-height: 44px; } .tp-mode { min-height: 36px; } }
 @media (prefers-reduced-motion: reduce) { .tp-svg * { transition: none !important; } }
+
+/* built into the page */
+.tp-inline { margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--tp-line, #cfcabd); border-radius: 12px; }
