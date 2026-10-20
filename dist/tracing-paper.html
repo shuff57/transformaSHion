@@ -22,14 +22,18 @@
   }
 }
 
-.tp { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; grid-template-rows: auto 1fr; column-gap: 1rem; align-items: start; color: var(--tp-ink);
+.tp { display: grid; grid-template-columns: minmax(0, 1fr) 21rem; column-gap: 1rem; align-items: start; color: var(--tp-ink);
   font: 15px/1.4 ui-serif, Georgia, "Times New Roman", serif; }
-.tp-head { grid-column: 1; grid-row: 1; min-width: 0; }
-.tp-pin { grid-column: 1; grid-row: 2; min-width: 0; position: sticky; top: var(--tp-top, 0.5rem); z-index: 2; background: var(--tp-bg); padding-bottom: 0.3rem; }
-.tp-side { grid-column: 2; grid-row: 1 / span 2; }
+.tp-left { grid-column: 1; grid-row: 1; min-width: 0; align-self: stretch; }
+.tp-stick { position: sticky; top: var(--tp-top, 0.5rem); z-index: 2; background: var(--tp-bg); max-height: calc(100vh - var(--tp-top, 0.5rem) - 0.5rem); overflow-y: auto; }
+.tp-pin { min-width: 0; padding-bottom: 0.3rem; }
+.tp-side { grid-column: 2; grid-row: 1; }
 @media (max-width: 880px) {
-  .tp { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
-  .tp-head, .tp-pin, .tp-side { grid-column: 1; grid-row: auto; }
+  .tp { grid-template-columns: minmax(0, 1fr); }
+  .tp-left, .tp-stick { display: contents; }
+  .tp-pin { position: sticky; top: var(--tp-top, 0.5rem); z-index: 2; background: var(--tp-bg); }
+  .tp-head { order: 0; } .tp-pin { order: 1; } .tp-side { order: 2; } .tp-under { order: 3; }
+  .tp-side, .tp-under { grid-column: 1; grid-row: auto; }
   .tp-pin { box-shadow: 0 6px 8px -6px rgba(0, 0, 0, 0.35); margin-bottom: 0.6rem; }
   .tp-side { margin-top: 0; }
 }
@@ -109,6 +113,8 @@ polyline.tp-mark { fill: none; }
 
 /* built into the page */
 .tp-inline { margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--tp-line, #cfcabd); border-radius: 12px; background: var(--tp-bg, transparent); color: var(--tp-ink); }
+.tp-under { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.6rem; align-items: start; margin-top: 0.5rem; }
+@media (max-width: 520px) { .tp-under { grid-template-columns: minmax(0, 1fr); } }
 </style>
 <style>
   :root { color-scheme: light dark; }
@@ -421,7 +427,7 @@ polyline.tp-mark { fill: none; }
 
     ui.lay = btn("Lay tracing paper on the grid", function () { layPaper(!S.paper); });
     ui.trace = btn("Trace my shape", traceFigure);
-    ui.closeShape = btn("Join the marks", function () { S.closed = true; draw(); });
+    ui.closeShape = btn("Join my marks", function () { S.closed = true; draw(); });
     ui.clear = btn("Clear marks", function () { S.traces = []; S.closed = false; draw(); say("Marks cleared."); });
     ui.modes = el("div", { class: "tp-modes", role: "radiogroup", "aria-label": "What a click on the grid does" });
     ui.radios = {};
@@ -485,8 +491,9 @@ polyline.tp-mark { fill: none; }
     ui.moves = el("ol", { class: "tp-moves" });
     ui.undo = btn("Undo last move", undo);
     ui.reset = btn("Put the paper back", resetPaper);
-    group("Where the marks are", [ui.table], pPaper);
-    group("Moves so far", [ui.moves, row([ui.undo, ui.reset])]);
+    var under = el("div", { class: "tp-under" });
+    group("Where the marks are", [ui.table], under);
+    group("Moves so far", [ui.moves, row([ui.undo, ui.reset])], under);
 
     ui.checkBox = el("section", { class: "tp-group tp-check" });
     ui.checkSel = el("select", { class: "tp-sel", "aria-label": "Which move are you predicting" });
@@ -503,7 +510,11 @@ polyline.tp-mark { fill: none; }
     ui.checkBox.appendChild(ui.checkMsg);
     pCheck.appendChild(ui.checkBox);
 
-    wrap.appendChild(head); wrap.appendChild(pin); wrap.appendChild(side);
+    var left = el("div", { class: "tp-left" });
+    var stick = el("div", { class: "tp-stick" });
+    stick.appendChild(pin); stick.appendChild(under);
+    left.appendChild(head); left.appendChild(stick);
+    wrap.appendChild(left); wrap.appendChild(side);
 
     // keep the grid pinned just under the page's own sticky header, if it has one
     function pinTop() {
@@ -539,7 +550,7 @@ polyline.tp-mark { fill: none; }
       ui.shapeIn.value = ""; ui.shapeMsg.textContent = "";
       ui.shapeCheck.style.display = S.plotMode === "given" ? "" : "none";
       ui.shapeHint.textContent = S.plotMode === "given"
-        ? "Plot the " + S.P.shapes.filter(function (s) { return s.role !== "ref"; }).map(function (s) { return s.name || "shape"; }).join(" and ") + ": " + target.map(pt).join(", ") + ". Click the grid for each corner in this order, then close the shape."
+        ? "Plot the " + S.P.shapes.filter(function (s) { return s.role !== "ref"; }).map(function (s) { return s.name || "shape"; }).join(" and ") + ": " + target.map(pt).join(", ") + ". Click the grid for each corner in this order, then close the shape (use the Close the shape button, or click corner A again)."
         : "Plot a shape of your own: click the grid for each corner, then close the shape.";
       if (ui.sel) ui.sel.value = String(i);
       ui.title.textContent = S.P.title;
@@ -770,7 +781,8 @@ polyline.tp-mark { fill: none; }
       } else if (S.mode === "plotshape") {
         var fh = -1;
         S.fig.forEach(function (q, k) { if (Math.abs(q[0] - p[0]) < 1e-6 && Math.abs(q[1] - p[1]) < 1e-6) fh = k; });
-        if (fh >= 0) { S.fig.splice(fh, 1); if (S.fig.length < 3) S.figClosed = false; say("Removed the corner at " + pt(p) + "."); }
+        if (fh === 0 && S.fig.length > 2) { S.figClosed = !S.figClosed; say(S.figClosed ? "Shape closed." : "Shape opened again."); }
+        else if (fh >= 0) { S.fig.splice(fh, 1); if (S.fig.length < 3) S.figClosed = false; say("Removed the corner at " + pt(p) + "."); }
         else { S.fig.push(p); say("Plotted corner " + String.fromCharCode(64 + ((S.fig.length - 1) % 26) + 1) + " at " + pt(p) + "."); }
         ui.shapeMsg.textContent = ""; ui.shapeIn.value = S.fig.map(pt).join(", ");
         draw();

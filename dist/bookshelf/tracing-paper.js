@@ -291,7 +291,7 @@
 
     ui.lay = btn("Lay tracing paper on the grid", function () { layPaper(!S.paper); });
     ui.trace = btn("Trace my shape", traceFigure);
-    ui.closeShape = btn("Join the marks", function () { S.closed = true; draw(); });
+    ui.closeShape = btn("Join my marks", function () { S.closed = true; draw(); });
     ui.clear = btn("Clear marks", function () { S.traces = []; S.closed = false; draw(); say("Marks cleared."); });
     ui.modes = el("div", { class: "tp-modes", role: "radiogroup", "aria-label": "What a click on the grid does" });
     ui.radios = {};
@@ -355,8 +355,9 @@
     ui.moves = el("ol", { class: "tp-moves" });
     ui.undo = btn("Undo last move", undo);
     ui.reset = btn("Put the paper back", resetPaper);
-    group("Where the marks are", [ui.table], pPaper);
-    group("Moves so far", [ui.moves, row([ui.undo, ui.reset])]);
+    var under = el("div", { class: "tp-under" });
+    group("Where the marks are", [ui.table], under);
+    group("Moves so far", [ui.moves, row([ui.undo, ui.reset])], under);
 
     ui.checkBox = el("section", { class: "tp-group tp-check" });
     ui.checkSel = el("select", { class: "tp-sel", "aria-label": "Which move are you predicting" });
@@ -373,7 +374,11 @@
     ui.checkBox.appendChild(ui.checkMsg);
     pCheck.appendChild(ui.checkBox);
 
-    wrap.appendChild(head); wrap.appendChild(pin); wrap.appendChild(side);
+    var left = el("div", { class: "tp-left" });
+    var stick = el("div", { class: "tp-stick" });
+    stick.appendChild(pin); stick.appendChild(under);
+    left.appendChild(head); left.appendChild(stick);
+    wrap.appendChild(left); wrap.appendChild(side);
 
     // keep the grid pinned just under the page's own sticky header, if it has one
     function pinTop() {
@@ -409,7 +414,7 @@
       ui.shapeIn.value = ""; ui.shapeMsg.textContent = "";
       ui.shapeCheck.style.display = S.plotMode === "given" ? "" : "none";
       ui.shapeHint.textContent = S.plotMode === "given"
-        ? "Plot the " + S.P.shapes.filter(function (s) { return s.role !== "ref"; }).map(function (s) { return s.name || "shape"; }).join(" and ") + ": " + target.map(pt).join(", ") + ". Click the grid for each corner in this order, then close the shape."
+        ? "Plot the " + S.P.shapes.filter(function (s) { return s.role !== "ref"; }).map(function (s) { return s.name || "shape"; }).join(" and ") + ": " + target.map(pt).join(", ") + ". Click the grid for each corner in this order, then close the shape (use the Close the shape button, or click corner A again)."
         : "Plot a shape of your own: click the grid for each corner, then close the shape.";
       if (ui.sel) ui.sel.value = String(i);
       ui.title.textContent = S.P.title;
@@ -640,7 +645,8 @@
       } else if (S.mode === "plotshape") {
         var fh = -1;
         S.fig.forEach(function (q, k) { if (Math.abs(q[0] - p[0]) < 1e-6 && Math.abs(q[1] - p[1]) < 1e-6) fh = k; });
-        if (fh >= 0) { S.fig.splice(fh, 1); if (S.fig.length < 3) S.figClosed = false; say("Removed the corner at " + pt(p) + "."); }
+        if (fh === 0 && S.fig.length > 2) { S.figClosed = !S.figClosed; say(S.figClosed ? "Shape closed." : "Shape opened again."); }
+        else if (fh >= 0) { S.fig.splice(fh, 1); if (S.fig.length < 3) S.figClosed = false; say("Removed the corner at " + pt(p) + "."); }
         else { S.fig.push(p); say("Plotted corner " + String.fromCharCode(64 + ((S.fig.length - 1) % 26) + 1) + " at " + pt(p) + "."); }
         ui.shapeMsg.textContent = ""; ui.shapeIn.value = S.fig.map(pt).join(", ");
         draw();

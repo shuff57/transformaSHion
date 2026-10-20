@@ -440,7 +440,7 @@ def test_student_plots_the_shape_by_clicking_and_checks_it(page):
     """Nothing is pre-plotted: the grid starts empty, the student clicks the corners, then checks the shape."""
     open_preset(page, "triangle-mirror")
     assert page.locator(".tp-pre").count() == 0 and page.locator(".tp-fv").count() == 0
-    assert "(1, 2), (4, 2), (1, 6)" in page.locator(".tp-hint").first.inner_text()
+    assert "(1, 2), (4, 2), (1, 6)" in page.locator(".tp-group .tp-hint", has_text="Plot the triangle").first.inner_text()
     click(page, "Lay tracing paper")
     click(page, "Trace my shape")
     assert page.locator(".tp-live").inner_text() == "Plot the shape on the grid first."
@@ -470,3 +470,24 @@ def test_free_setup_lets_students_plot_any_shape_and_hides_checking(page):
     assert now_points(page) == [(-3, 1), (2, 1), (2, 4), (-3, 4)]
     click(page, "Slide")
     assert now_points(page) == [(1, 1), (6, 1), (6, 4), (1, 4)]                 # the default slide is right 4
+
+
+def test_clicking_the_first_corner_closes_and_reopens_the_shape(page):
+    open_preset(page, "triangle-mirror")
+    for x, y in ((1, 2), (4, 2), (1, 6)):
+        svg_click(page, x, y)
+    assert page.locator("polygon.tp-pre").count() == 0
+    svg_click(page, 1, 2)                                                         # first corner again closes
+    assert page.locator("polygon.tp-pre").count() == 1 and page.locator(".tp-fv").count() == 3
+    svg_click(page, 1, 2)                                                         # and again opens it
+    assert page.locator("polygon.tp-pre").count() == 0 and page.locator(".tp-fv").count() == 3
+
+
+def test_marks_and_moves_sit_under_the_grid(page):
+    open_preset(page, "triangle-mirror")
+    grid = page.locator(".tp-svg").bounding_box()
+    for sel in (".tp-moves", ".tp-table"):
+        box = page.locator(sel).bounding_box()
+        assert box["y"] >= grid["y"] + grid["height"] - 1 and box["x"] < grid["x"] + grid["width"]
+    t, m = page.locator(".tp-table").bounding_box(), page.locator(".tp-moves").bounding_box()
+    assert t["x"] + t["width"] <= m["x"] + 1 and abs(t["y"] - m["y"]) < 60          # side by side, not stacked
