@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracing Paper</title>
+<link rel="stylesheet" href="src/tracing-paper.css">
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: #26241d; color: #faf9f5; } }
+  [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
+  main { max-width: 80rem; margin: 0 auto; }
+  h1 { margin: 0 0 0.2rem; }
+  .lede { margin: 0 0 1rem; font-style: italic; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tracing Paper</h1>
+  <p class="lede">Lay a sheet over a coordinate grid, mark points on it, then slide it, turn it about a center, or flip it over a mirror. The tool shows where every mark went; working out the rule is yours.</p>
+  <div id="app"></div>
+</main>
+<script src="src/presets.js"></script>
+<script src="src/tracing-paper.js"></script>
+<script>
+  // ?preset=parallel or #parallel picks a starting setup
+  var want = new URLSearchParams(location.search).get("preset") || location.hash.replace(/^#/, "");
+  window.tracingPaper = TracingPaper.mount(document.getElementById("app"), { presets: TRACING_PAPER_PRESETS, preset: want });
+</script>
+</body>
+</html>
