@@ -23,6 +23,48 @@ def browser():
         b.close()
 
 
+class Revealing:
+    """A locator whose actions first open the control tab it lives in, as a person would."""
+
+    def __init__(self, loc, pg):
+        self._loc, self._pg = loc, pg
+
+    def _open(self):
+        if self._loc.count() == 0:                    # role queries skip hidden controls: try each tab until it shows up
+            for tab in self._pg.locator(".tp-tab").all():
+                tab.click()
+                if self._loc.count():
+                    return
+            return
+        tab = self._loc.first.evaluate("e => { const p = e.closest('.tp-panel'); return p && p.hidden ? p.id.replace('-p-', '-t-') : null; }")
+        if tab:
+            self._pg.locator("#" + tab).click()
+
+    def __getattr__(self, name):
+        attr = getattr(self._loc, name)
+        if name in ("click", "fill", "check", "uncheck", "select_option", "is_disabled", "is_enabled", "inner_text", "text_content", "is_checked"):
+            def go(*a, **k):
+                self._open()
+                return attr(*a, **k)
+            return go
+        if name == "first":
+            return Revealing(attr, self._pg)
+        return attr
+
+
+class Tabbed:
+    """The page, with get_by_* locators that open the right tab before acting."""
+
+    def __init__(self, pg):
+        self._pg = pg
+
+    def __getattr__(self, name):
+        attr = getattr(self._pg, name)
+        if name.startswith("get_by_"):
+            return lambda *a, **k: Revealing(attr(*a, **k), self._pg)
+        return attr
+
+
 @pytest.fixture()
 def page(browser):
     ctx = browser.new_context(viewport={"width": 1280, "height": 900}, reduced_motion="reduce")
@@ -30,7 +72,7 @@ def page(browser):
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-    yield pg
+    yield Tabbed(pg)
     assert errors == [], errors
     ctx.close()
 
@@ -238,7 +280,7 @@ def test_check_never_gives_the_answer(page):
 
 def test_animated_flip_lands_exactly(browser):
     ctx = browser.new_context(viewport={"width": 1280, "height": 900})        # motion allowed
-    pg = ctx.new_page()
+    pg = Tabbed(ctx.new_page())
     open_preset(pg, "triangle-mirror")
     click(pg, "Lay tracing paper")
     click(pg, "Trace the figure")
@@ -309,3 +351,44 @@ def test_floating_button_is_styled_outside_the_dialog(browser):
     border = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-fab')).borderTopColor")
     assert border == "rgb(80, 78, 73)", border          # --tp-axis; an undefined token falls back to black
     pg.close()
+
+
+def test_tabs_show_one_group_and_follow_the_keyboard(page):
+    open_preset(page, "triangle-mirror")
+    tabs = page.locator(".tp-tab")
+    assert tabs.all_inner_texts() == ["Paper", "Slide", "Turn", "Flip", "Check"]
+    assert page.locator(".tp-panel:not([hidden])").count() == 1                 # one control group at a time
+    page.locator(".tp-tab[aria-selected=true]").focus()
+    page.keyboard.press("ArrowRight")
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Slide"
+    page.keyboard.press("End")
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Check"
+    page.keyboard.press("Home")
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Paper"
+    open_preset(page, "blank")                                                  # a setup with no checks has no Check tab
+    assert page.locator(".tp-tab", has_text="Check").is_hidden()
+
+
+def test_picking_a_center_or_mirror_on_the_grid_opens_its_tab(page):
+    open_preset(page, "triangle-mirror")
+    page.get_by_text("Pick a center", exact=True).click()
+    svg_click(page, 3, 3)
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Turn"
+    page.locator("#" + page.locator(".tp-tab", has_text="Paper").get_attribute("id")).click()
+    page.get_by_text("Pick a mirror (two points)", exact=True).click()
+    svg_click(page, 1, 1)
+    svg_click(page, 4, 4)
+    assert page.locator(".tp-tab[aria-selected=true]").inner_text() == "Flip"
+
+
+def test_grid_stays_pinned_and_the_page_theme_wins_over_the_os(browser):
+    ctx = browser.new_context(viewport={"width": 390, "height": 700}, reduced_motion="reduce", color_scheme="dark")
+    pg = ctx.new_page()
+    pg.goto(INDEX.as_uri() + "?preset=triangle-mirror")
+    pg.wait_for_selector(".tp-svg")
+    assert pg.evaluate("() => getComputedStyle(document.querySelector('.tp-pin')).position") == "sticky"
+    dark = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-root')).getPropertyValue('--tp-bg').trim()")
+    pg.evaluate("() => document.documentElement.classList.add('tp-page-themed')")      # a host page that does its own theming
+    light = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-root')).getPropertyValue('--tp-bg').trim()")
+    assert dark == "#26241d" and light == "#f5f3ea", (dark, light)
+    ctx.close()

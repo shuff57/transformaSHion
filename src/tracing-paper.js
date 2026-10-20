@@ -174,7 +174,8 @@
     host.appendChild(wrap);
 
     // ---- build the static UI once
-    var left = el("div", { class: "tp-stage" });
+    var head = el("div", { class: "tp-head" });
+    var pin = el("div", { class: "tp-pin" });
     ui.title = el("h2", { class: "tp-title" });
     ui.note = el("p", { class: "tp-note" });
     ui.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -183,13 +184,37 @@
     ui.svg.setAttribute("role", "application");
     ui.svg.setAttribute("aria-label", "Coordinate grid with tracing paper. Use the controls beside it, or the arrow keys to slide the paper one unit.");
     ui.live = el("div", { class: "tp-live", role: "status", "aria-live": "polite" });
-    left.appendChild(ui.title); left.appendChild(ui.note); left.appendChild(ui.svg); left.appendChild(ui.live);
+    head.appendChild(ui.title); head.appendChild(ui.note); pin.appendChild(ui.svg); pin.appendChild(ui.live);
 
     var side = el("div", { class: "tp-side" });
-    function group(title, kids) {
-      var g = el("section", { class: "tp-group" }, [el("h3", { text: title })]);
+    var tabs = el("div", { class: "tp-tabs", role: "tablist", "aria-label": "Tracing paper controls" });
+    var panels = {}, tabOrder = [];
+    function panel(key, label) {
+      var b = el("button", { type: "button", class: "tp-tab", role: "tab", id: id + "-t-" + key, "aria-controls": id + "-p-" + key, text: label });
+      var p = el("div", { class: "tp-panel", role: "tabpanel", id: id + "-p-" + key, "aria-labelledby": id + "-t-" + key });
+      b.addEventListener("click", function () { showTab(key); });
+      b.addEventListener("keydown", function (e) {
+        var vis = tabOrder.filter(function (k) { return !panels[k].b.hidden; }), i = vis.indexOf(key), n = -1;
+        if (e.key === "ArrowRight") n = (i + 1) % vis.length; else if (e.key === "ArrowLeft") n = (i - 1 + vis.length) % vis.length;
+        else if (e.key === "Home") n = 0; else if (e.key === "End") n = vis.length - 1;
+        if (n >= 0) { e.preventDefault(); showTab(vis[n]); panels[vis[n]].b.focus(); }
+      });
+      tabs.appendChild(b); panels[key] = { b: b, p: p }; tabOrder.push(key);
+      return p;
+    }
+    function showTab(key) {
+      tabOrder.forEach(function (k) {
+        var on = k === key;
+        panels[k].p.hidden = !on; panels[k].b.setAttribute("aria-selected", on ? "true" : "false"); panels[k].b.tabIndex = on ? 0 : -1;
+      });
+    }
+    var pPaper = panel("paper", "Paper"), pSlide = panel("slide", "Slide"), pTurn = panel("turn", "Turn"), pFlip = panel("flip", "Flip"), pCheck = panel("check", "Check");
+    side.appendChild(tabs);
+    [pPaper, pSlide, pTurn, pFlip, pCheck].forEach(function (p) { side.appendChild(p); });
+    function group(title, kids, into) {
+      var g = el("section", { class: "tp-group" }, title ? [el("h3", { text: title })] : []);
       kids.forEach(function (k) { g.appendChild(k); });
-      side.appendChild(g);
+      (into || side).appendChild(g);
       return g;
     }
     function btn(text, fn, cls) {
@@ -209,7 +234,7 @@
       ui.sel = el("select", { class: "tp-sel", "aria-label": "Choose a setup" });
       presets.forEach(function (p, i) { ui.sel.appendChild(el("option", { value: String(i), text: p.title })); });
       ui.sel.addEventListener("change", function () { setPreset(+ui.sel.value); });
-      group("Setup", [ui.sel]);
+      side.insertBefore(group("Setup", [ui.sel]), tabs);
     }
 
     ui.lay = btn("Lay tracing paper on the grid", function () { layPaper(!S.paper); });
@@ -227,18 +252,18 @@
     });
     ui.snapBox = el("input", { type: "checkbox", checked: true });
     ui.snapBox.addEventListener("change", function () { S.snap = ui.snapBox.checked; });
-    group("1  The paper", [row([ui.lay]), row([ui.trace, ui.closeShape, ui.clear]), ui.modes,
-      el("label", { class: "tp-snap" }, [ui.snapBox, el("span", { text: "Snap clicks to grid points" })])]);
+    group("The paper", [row([ui.lay]), row([ui.trace, ui.closeShape, ui.clear]), ui.modes,
+      el("label", { class: "tp-snap" }, [ui.snapBox, el("span", { text: "Snap clicks to grid points" })])], pPaper);
 
     ui.dx = numInput("slide right by", 4, "4.2em"); ui.dy = numInput("slide up by", 0, "4.2em");
-    group("2  Slide", [row([lab("right"), ui.dx, lab("up"), ui.dy, btn("Slide", function () {
+    group(null, [row([lab("right"), ui.dx, lab("up"), ui.dy, btn("Slide", function () {
       doSlide(+ui.dx.value || 0, +ui.dy.value || 0);
-    })]), el("p", { class: "tp-hint", text: "You can also drag the paper, or press an arrow key on the grid." })]);
+    })]), el("p", { class: "tp-hint", text: "You can also drag the paper, or press an arrow key on the grid." })], pSlide);
 
     ui.centerTxt = el("span", { class: "tp-val", text: "no center yet" });
     ui.ang = numInput("angle in degrees", 90, "4.4em");
     ui.cx = numInput("center x", 0, "3.6em"); ui.cy = numInput("center y", 0, "3.6em");
-    group("3  Turn", [
+    group(null, [
       row([lab("center"), ui.centerTxt]),
       row([lab("or type"), lab("("), ui.cx, lab(","), ui.cy, lab(")"), btn("Set", function () {
         S.center = [+ui.cx.value || 0, +ui.cy.value || 0]; draw();
@@ -246,12 +271,12 @@
       row([lab("angle"), ui.ang, lab("°")]),
       row([btn("↺ counterclockwise", function () { doTurn(+ui.ang.value || 0); }),
         btn("↻ clockwise", function () { doTurn(-(+ui.ang.value || 0)); })]),
-    ]);
+    ], pTurn);
 
     ui.mirrorTxt = el("span", { class: "tp-val", text: "no mirror yet" });
     ui.vx = numInput("mirror x equals", 5, "3.6em"); ui.hy = numInput("mirror y equals", 0, "3.6em");
     ui.quick = row([]);
-    group("4  Flip", [
+    group(null, [
       row([lab("mirror"), ui.mirrorTxt]),
       ui.quick,
       row([btn("x-axis", function () { setMirror({ type: "h", b: 0 }); }), btn("y-axis", function () { setMirror({ type: "v", a: 0 }); }),
@@ -259,13 +284,13 @@
       row([lab("x ="), ui.vx, btn("Set", function () { setMirror({ type: "v", a: +ui.vx.value || 0 }); }),
         lab("y ="), ui.hy, btn("Set", function () { setMirror({ type: "h", b: +ui.hy.value || 0 }); })]),
       row([btn("Flip the paper over the mirror", doFlip, "tp-primary")]),
-    ]);
+    ], pFlip);
 
     ui.table = el("div", { class: "tp-table" });
     ui.moves = el("ol", { class: "tp-moves" });
     ui.undo = btn("Undo last move", undo);
     ui.reset = btn("Put the paper back", resetPaper);
-    group("Where the marks are", [ui.table]);
+    group("Where the marks are", [ui.table], pPaper);
     group("Moves so far", [ui.moves, row([ui.undo, ui.reset])]);
 
     ui.checkBox = el("section", { class: "tp-group tp-check" });
@@ -278,9 +303,26 @@
     ui.checkBox.appendChild(ui.checkIn);
     ui.checkBox.appendChild(row([btn("Check", doCheck)]));
     ui.checkBox.appendChild(ui.checkMsg);
-    side.appendChild(ui.checkBox);
+    pCheck.appendChild(ui.checkBox);
 
-    wrap.appendChild(left); wrap.appendChild(side);
+    wrap.appendChild(head); wrap.appendChild(pin); wrap.appendChild(side);
+
+    // keep the grid pinned just under the page's own sticky header, if it has one
+    function pinTop() {
+      var m = 0;
+      if (!host.closest(".tp-dialog")) {
+        var c = document.querySelectorAll("header, nav, [class*=navbar], [class*=topbar], [class*=site-header]");
+        for (var i = 0; i < c.length; i++) {
+          var cs = getComputedStyle(c[i]);
+          if (cs.position !== "fixed" && cs.position !== "sticky") continue;
+          var r = c[i].getBoundingClientRect();
+          if (r.top <= 1 && r.bottom > m && r.bottom < 260) m = r.bottom;
+        }
+      }
+      wrap.style.setProperty("--tp-top", (m + 8) + "px");
+    }
+    pinTop();
+    window.addEventListener("resize", pinTop);
 
     // ---- announcements
     function say(t) { ui.live.textContent = t; }
@@ -304,7 +346,9 @@
       ui.quick.style.display = (S.P.guides || []).length ? "" : "none";
       ui.checkSel.innerHTML = "";
       (S.P.checks || []).forEach(function (c, k) { ui.checkSel.appendChild(el("option", { value: String(k), text: c.label })); });
-      ui.checkBox.style.display = (S.P.checks || []).length ? "" : "none";
+      var hasChecks = (S.P.checks || []).length > 0;
+      panels.check.b.hidden = !hasChecks;
+      if (!hasChecks && !panels.check.p.hidden) showTab("paper");
       ui.checkMsg.textContent = ""; ui.checkIn.value = "";
       ui.svg.setAttribute("viewBox", "0 0 " + (ML + (S.P.xr[1] - S.P.xr[0]) * CELL + MR) + " " + (MT + (S.P.yr[1] - S.P.yr[0]) * CELL + MB));
       draw();
@@ -492,11 +536,11 @@
         if (!S.paper) { say("Lay the tracing paper on the grid first."); return; }
         S.traces.push({ uv: apply(inv(S.M), p), at: p }); draw(); say("Marked P" + S.traces.length + " at " + pt(p) + ".");
       } else if (S.mode === "center") {
-        S.center = p; draw(); say("Center: " + pt(p) + ".");
+        S.center = p; showTab("turn"); draw(); say("Center: " + pt(p) + ".");
       } else if (S.mode === "mirror") {
         if (S.pend.length && S.pend[0][0] === p[0] && S.pend[0][1] === p[1]) return;
         S.pend.push(p);
-        if (S.pend.length === 2) { S.mirror = lineFrom({ type: "line", p: S.pend[0], q: S.pend[1] }); S.pend = []; say("Mirror: " + lineText(S.mirror) + "."); }
+        if (S.pend.length === 2) { S.mirror = lineFrom({ type: "line", p: S.pend[0], q: S.pend[1] }); S.pend = []; showTab("flip"); say("Mirror: " + lineText(S.mirror) + "."); }
         else say("First mirror point " + pt(p) + ". Click a second point.");
         draw();
       }
@@ -526,6 +570,7 @@
       lastKey = now;
     });
 
+    showTab("paper");
     setPreset(Math.max(0, presets.findIndex(function (p) { return p.id === opts.preset; })));
 
     return {
@@ -534,7 +579,7 @@
         if (i >= 0) setPreset(i);
       },
       state: function () { S.cell = CELL; return S; },
-      destroy: function () { host.innerHTML = ""; host.classList.remove("tp-root"); },
+      destroy: function () { window.removeEventListener("resize", pinTop); host.innerHTML = ""; host.classList.remove("tp-root"); },
     };
   }
 
