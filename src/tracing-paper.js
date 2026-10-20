@@ -127,7 +127,7 @@
   }
 
   // ------------------------------------------------------------------ geometry on screen
-  var CELL = 30, ML = 40, MT = 20, MB = 34, MR = 26;
+  var ML = 40, MT = 20, MB = 34, MR = 26;
   var uid = 0;
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -159,6 +159,7 @@
     opts = opts || {};
     var presets = (opts.presets && opts.presets.length ? opts.presets : [BLANK]).map(normalize);
     var id = "tp" + (++uid);
+    var CELL = 30;                  // pixels per grid square in the drawing; shrinks for wide grids so the text stays readable
     var reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     var S = {
@@ -287,6 +288,7 @@
     // ---- setup and state changes
     function setPreset(i) {
       S.pi = i; S.P = presets[i];
+      CELL = Math.max(16, Math.min(30, Math.floor(760 / (S.P.xr[1] - S.P.xr[0]))));
       S.paper = false; S.M = ID; S.traces = []; S.closed = false; S.history = []; S.log = [];
       S.center = S.P.center ? S.P.center.slice() : null; S.mirror = null; S.pend = [];
       S.drag = null; S.ghost = null;
@@ -349,6 +351,7 @@
       animate(function (t) { return mul(translation(dx * t, dy * t), S.M); }, mul(translation(dx, dy), S.M), slideText(dx, dy));
     }
     function doTurn(deg) {
+      if (!S.paper) { say("Lay the tracing paper on the grid first."); return; }
       if (!S.center) { say("Pick a center first."); return; }
       if (!deg) { say("Choose an angle to turn."); return; }
       var c = S.center.slice();
@@ -356,6 +359,7 @@
       animate(function (t) { return mul(rotation(c, deg * t), S.M); }, mul(rotation(c, deg), S.M), text);
     }
     function doFlip() {
+      if (!S.paper) { say("Lay the tracing paper on the grid first."); return; }
       if (!S.mirror) { say("Pick a mirror first."); return; }
       var L = S.mirror;
       animate(function (t) { return mul(reflection(L, 2 * t), S.M); }, mul(reflection(L, 2), S.M), "flip over " + lineText(L));
@@ -438,7 +442,7 @@
       S.pend.forEach(function (p) { o.push('<circle class="tp-pend" cx="' + px(p[0]) + '" cy="' + py(p[1]) + '" r="6"/>'); });
       if (S.center) {
         o.push('<circle class="tp-center" cx="' + px(S.center[0]) + '" cy="' + py(S.center[1]) + '" r="8"/>');
-        o.push('<text class="tp-clbl" x="' + (px(S.center[0]) + 12) + '" y="' + (py(S.center[1]) + 18) + '">center</text>');
+        o.push('<text class="tp-clbl" style="text-anchor:end" x="' + (px(S.center[0]) - 12) + '" y="' + (py(S.center[1]) - 10) + '">center</text>');
       }
       ui.svg.innerHTML = o.join("");
       refresh();
@@ -529,7 +533,7 @@
         var i = typeof idOrIndex === "number" ? idOrIndex : presets.findIndex(function (p) { return p.id === idOrIndex; });
         if (i >= 0) setPreset(i);
       },
-      state: function () { return S; },
+      state: function () { S.cell = CELL; return S; },
       destroy: function () { host.innerHTML = ""; host.classList.remove("tp-root"); },
     };
   }

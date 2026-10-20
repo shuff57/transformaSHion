@@ -62,10 +62,10 @@ def svg_click(pg, x, y, drag_to=None):
     """Click (or drag) at world coordinates by mapping through the svg's own box."""
     box = pg.evaluate("""() => { const s = document.querySelector('.tp-svg'); const r = s.getBoundingClientRect(); const vb = s.viewBox.baseVal;
         return {left: r.left, top: r.top, w: r.width, h: r.height, vw: vb.width, vh: vb.height}; }""")
-    xr, yr = pg.evaluate("() => { const S = window.tracingPaper.state(); return [S.P.xr, S.P.yr]; }")
+    xr, yr, cell = pg.evaluate("() => { const S = window.tracingPaper.state(); return [S.P.xr, S.P.yr, S.cell]; }")
 
     def at(wx, wy):
-        vx, vy = 40 + (wx - xr[0]) * 30, 20 + (yr[1] - wy) * 30
+        vx, vy = 40 + (wx - xr[0]) * cell, 20 + (yr[1] - wy) * cell
         return box["left"] + vx * box["w"] / box["vw"], box["top"] + vy * box["h"] / box["vh"]
 
     sx, sy = at(x, y)
@@ -277,3 +277,24 @@ def test_screenshots_for_a_look(page, tmp_path_factory):
         click(page, "Use x = 6")
         click(page, "Flip the paper over the mirror")
         page.screenshot(path=str(out / f"tp_parallel_{theme}.png"), full_page=True)
+
+
+def test_wide_grids_keep_readable_text(page):
+    """The kite grid is 40 wide; the drawing scales its squares so tick numbers stay near 12px on screen."""
+    open_preset(page, "kite")
+    px = page.evaluate("""() => { const s = document.querySelector('.tp-svg'); const t = s.querySelector('.tp-tick');
+        return parseFloat(getComputedStyle(t).fontSize) * s.getBoundingClientRect().width / s.viewBox.baseVal.width; }""")
+    assert px >= 10, px
+
+
+def test_messages_name_the_missing_step_in_order(page):
+    open_preset(page, "triangle-mirror")
+    click(page, "Flip the paper over the mirror")
+    assert page.locator(".tp-live").inner_text() == "Lay the tracing paper on the grid first."
+    click(page, "counterclockwise")
+    assert page.locator(".tp-live").inner_text() == "Lay the tracing paper on the grid first."
+    click(page, "Lay tracing paper")
+    click(page, "Flip the paper over the mirror")
+    assert page.locator(".tp-live").inner_text() == "Pick a mirror first."
+    click(page, "counterclockwise")
+    assert page.locator(".tp-live").inner_text() == "Pick a center first."
