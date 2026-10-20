@@ -298,3 +298,14 @@ def test_messages_name_the_missing_step_in_order(page):
     assert page.locator(".tp-live").inner_text() == "Pick a mirror first."
     click(page, "counterclockwise")
     assert page.locator(".tp-live").inner_text() == "Pick a center first."
+
+
+def test_floating_button_is_styled_outside_the_dialog(browser):
+    """The plugin's floating button lives on the host page, outside .tp-root; its color tokens must still resolve."""
+    pg = browser.new_page()
+    pg.set_content("<!doctype html><body><p>host page</p></body>")
+    pg.add_style_tag(path=str(INDEX.parent / "src" / "tracing-paper.css"))
+    pg.evaluate("() => { const b = document.createElement('button'); b.className = 'tp-btn tp-fab'; b.textContent = 'Tracing paper'; document.body.appendChild(b); }")
+    border = pg.evaluate("() => getComputedStyle(document.querySelector('.tp-fab')).borderTopColor")
+    assert border != "rgba(0, 0, 0, 0)" and border != "", border
+    pg.close()

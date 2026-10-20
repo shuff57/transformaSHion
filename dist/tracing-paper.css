@@ -1,15 +1,15 @@
 /* Tracing Paper: styles. Tokens first; light by default, dark under prefers-color-scheme or [data-theme="dark"]. */
-.tp-root, .tp-overlay {
+.tp-root, .tp-overlay, .tp-fab {
   --tp-ink: #141413; --tp-curve: #3d5a80; --tp-accent: #b3520f; --tp-axis: #504e49; --tp-bg: #f5f3ea;
   --tp-panel: #ffffff; --tp-line: #cfcabd; --tp-paper: rgba(255, 244, 196, 0.55); --tp-paper-back: rgba(214, 226, 240, 0.6);
 }
-:root[data-theme="dark"] .tp-root, :root[data-theme="dark"] .tp-overlay,
-[data-theme="dark"] .tp-root, [data-theme="dark"] .tp-overlay {
+:root[data-theme="dark"] .tp-root, :root[data-theme="dark"] .tp-overlay, :root[data-theme="dark"] .tp-fab,
+[data-theme="dark"] .tp-root, [data-theme="dark"] .tp-overlay, [data-theme="dark"] .tp-fab {
   --tp-ink: #faf9f5; --tp-curve: #7a9bbf; --tp-accent: #e0a96d; --tp-axis: #87867f; --tp-bg: #26241d;
   --tp-panel: #2f2c24; --tp-line: #55524a; --tp-paper: rgba(224, 196, 110, 0.28); --tp-paper-back: rgba(122, 155, 191, 0.3);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tp-root, :root:not([data-theme="light"]) .tp-overlay {
+  :root:not([data-theme="light"]) .tp-root, :root:not([data-theme="light"]) .tp-overlay, :root:not([data-theme="light"]) .tp-fab {
     --tp-ink: #faf9f5; --tp-curve: #7a9bbf; --tp-accent: #e0a96d; --tp-axis: #87867f; --tp-bg: #26241d;
     --tp-panel: #2f2c24; --tp-line: #55524a; --tp-paper: rgba(224, 196, 110, 0.28); --tp-paper-back: rgba(122, 155, 191, 0.3);
   }
