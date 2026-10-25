@@ -47,6 +47,31 @@ Works with a mouse, touch and keyboard, in light and dark themes, and respects r
 
 `src/presets.js` has seven worked setups (from a high-school geometry unit on rigid motions).
 
+## The plotter: a plain graphing grid (newer style)
+
+`src/plotter.js` and `src/plotter.css` are the same idea laid out like a MyOpenMath graphing question. The grid starts
+empty and nothing is pre-drawn: the student plots every figure.
+
+- **Draw:** Line, Dot, Polygon and Eraser, plus Clear All. Clicks snap to grid points.
+- **Paper:** turn it on, then mark points on it (click a grid crossing or a corner; click a polygon's edge to copy the
+  whole polygon), and slide, turn or flip the paper. The paper's table and the list of moves stay under the grid.
+- **Check** (only on a setup that has a hidden `target`): compares the paper's marked points to the target and says only
+  "Matches." or "Does not match." The target is never in the page.
+
+```html
+<link rel="stylesheet" href="dist/plotter.css">
+<div id="app"></div>
+<script src="dist/plotter.js"></script>
+<script>Plotter.mount(document.getElementById("app"), { presets: Plotter.presets, preset: "parallel" });</script>
+```
+
+Presets (`Plotter.presets`): `blank`, `triangle-mirror`, `parallel`, `kite`, `turn`. A preset is plain data:
+`{ id, title, xr, yr, note, target }` (`target` optional). On a bookSHelf page, `<div class="pl-inline"
+data-plotter-preset="parallel">` builds the grid in place and `[label](#plotter:parallel)` opens it in a dialog.
+`dist/plotter.html` is one self-contained file; `dist/bookshelf/plotter.*` is the plugin-loader pair. Tests:
+`tests/test_plotter.py` (drives Chromium). The tracing paper above is kept for its setups, which carry their own
+shapes, mirrors and checks.
+
 ## Files
 
 | | |
@@ -54,6 +79,7 @@ Works with a mouse, touch and keyboard, in light and dark themes, and respects r
 | `src/tracing-paper.js` | the tool (math, drawing, controls) |
 | `src/tracing-paper.css` | styles; light, dark, and `[data-theme="dark"]` |
 | `src/presets.js` | example setups |
+| `src/plotter.js`, `src/plotter.css` | the plotter (self-contained: presets, mount, plugin wrapper) |
 | `src/bookshelf-plugin.js` | wrapper for the bookSHelf page-plugin loader (not needed elsewhere) |
 | `build.py` | writes `dist/` |
 | `tests/test_tracing_paper.py` | drives the real UI in Chromium and checks every readout |

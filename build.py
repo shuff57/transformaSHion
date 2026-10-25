@@ -8,6 +8,9 @@
   dist/bookshelf/tracing-paper.js, .css
                                  the same core plus the example presets and the bookSHelf page-plugin wrapper
                                  (the plugin loader expects <name>/<name>.js and <name>.css)
+  dist/plotter.html              the plotter (plain graphing grid with an optional paper) as one self-contained file
+  dist/plotter.js, .css          the plotter for embedding; dist/bookshelf/plotter.js, .css is the same pair for the
+                                 bookSHelf plugin loader (plotter.js carries its own presets and plugin wrapper)
 """
 import pathlib
 
@@ -32,7 +35,20 @@ def main():
     page = page.replace('<script src="src/tracing-paper.js"></script>', "<script>\n" + core + "</script>")
     assert 'src="src/' not in page and 'href="src/' not in page, "a src/ reference survived"
     (DIST / "tracing-paper.html").write_text(page, encoding="utf-8")
+    build_plotter()
     print("wrote", ", ".join(str(p.relative_to(ROOT)) for p in sorted(DIST.rglob("*")) if p.is_file()))
+
+
+def build_plotter():
+    css, js = read("plotter.css"), read("plotter.js")
+    for d in (DIST, DIST / "bookshelf"):
+        (d / "plotter.js").write_text(js, encoding="utf-8")
+        (d / "plotter.css").write_text(css, encoding="utf-8")
+    page = (ROOT / "plotter.html").read_text(encoding="utf-8")
+    page = page.replace('<link rel="stylesheet" href="src/plotter.css">', "<style>\n" + css + "</style>")
+    page = page.replace('<script src="src/plotter.js"></script>', "<script>\n" + js + "</script>")
+    assert 'src="src/' not in page and 'href="src/' not in page, "a src/ reference survived (plotter)"
+    (DIST / "plotter.html").write_text(page, encoding="utf-8")
 
 
 def read_index():

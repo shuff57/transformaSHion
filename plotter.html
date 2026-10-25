@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plotter</title>
+<link rel="stylesheet" href="src/plotter.css">
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; padding: 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: #26241d; color: #faf9f5; } }
+  [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
+  main { max-width: 60rem; margin: 0 auto; }
+  h1 { margin: 0 0 0.2rem; }
+  .lede { margin: 0 0 1rem; font-style: italic; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Plotter</h1>
+  <p class="lede">A plain graphing grid. Plot a figure with the Line, Dot and Polygon tools, then turn on the paper, mark points on it, and slide, turn or flip it. The tool never says which move is right.</p>
+  <div id="app"></div>
+</main>
+<script src="src/plotter.js"></script>
+<script>
+  // ?preset=parallel or #parallel picks a starting grid
+  var want = new URLSearchParams(location.search).get("preset") || location.hash.replace(/^#/, "");
+  window.plotter = Plotter.mount(document.getElementById("app"), { presets: Plotter.presets, preset: want || undefined });
+</script>
+</body>
+</html>
