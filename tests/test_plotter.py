@@ -212,7 +212,7 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     pg = grid.pg
     row = pg.locator("[aria-label='Drawing tools']")
     texts = row.evaluate("e => [...e.children].map(c => c.getAttribute('aria-label') || c.textContent.trim())")
-    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon", "Paper"]
+    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon", "Paper", "Settings"]
     below = pg.evaluate("() => document.querySelector('.pl-bar').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
     assert below                                                       # the toolbar sits under the grid
     for gone in ("Segment", "Close polygon", "Erase", "Point"):      # Close polygon only shows with 3 corners
@@ -224,7 +224,7 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     pg.get_by_role("button", name="Paper", exact=True).click()
     names = pg.locator("[aria-label='Paper tools'] button:visible").evaluate_all("els => els.map(e => e.getAttribute('aria-label') || e.textContent.trim())")
     assert names[:4] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names
-    assert pg.locator(".pl-icon svg").count() == 5                     # icon buttons with an svg each: four tools and the paper
+    assert pg.locator(".pl-icon svg").count() == 6                     # icon buttons with an svg each: four tools, the paper and settings
 
 
 def test_line_anchors_are_small_squares_and_dots_are_circles(grid):
@@ -470,6 +470,7 @@ def test_320px_has_no_horizontal_overflow_and_44px_targets(browser, site, theme)
     pg.wait_for_selector("svg.pl-svg")
     pg.get_by_role("button", name="Paper", exact=True).click()
     pg.get_by_role("button", name="Turn", exact=True).click()
+    pg.locator("button[data-key=settings]").click()                      # the open settings menu must fit too
     assert pg.evaluate("() => document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     small = pg.evaluate("""() => [...document.querySelectorAll('.pl button, .pl input, .pl select, .pl summary')]
         .filter(e => e.offsetParent).map(e => [e.textContent.trim() || e.id, e.getBoundingClientRect().height, e.getBoundingClientRect().width])
@@ -527,6 +528,11 @@ def test_mark_image_on_grid_needs_a_mark(grid):
 def test_grid_size_can_be_set_and_reset(grid):
     pg = grid.pg
     row = pg.locator("[aria-label='Grid size']")
+    gear = pg.locator("button[data-key=settings]")
+    assert gear.get_attribute("aria-label") == "Settings" and gear.get_attribute("aria-expanded") == "false"
+    assert not row.is_visible()                                          # the grid size lives in the settings menu, closed at first
+    gear.click()
+    assert row.is_visible() and gear.get_attribute("aria-expanded") == "true"
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
     below = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
     assert below                                                         # the setting sits under the grid
@@ -547,6 +553,10 @@ def test_grid_size_can_be_set_and_reset(grid):
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert a.get_attribute("data-ymax") == "7"
     row.get_by_role("button", name="Reset grid").click()
+    row.locator("input[data-cfg=x0]").focus()
+    pg.keyboard.press("Escape")                                          # Escape closes the menu and returns focus to the gear
+    assert not row.is_visible() and gear.get_attribute("aria-expanded") == "false"
+    assert pg.evaluate("() => document.activeElement.getAttribute('data-key')") == "settings"
     assert [a.get_attribute(n) for n in ("data-xmin", "data-xmax", "data-ymin", "data-ymax")] == ["-10", "10", "-10", "10"]
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
 

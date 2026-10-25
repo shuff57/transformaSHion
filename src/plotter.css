@@ -80,7 +80,7 @@
 .pl-dialog .pl-root { margin: 0; border: 0; }
 .pl-close { position: absolute; top: 0.5rem; right: 0.6rem; }
 @media (prefers-reduced-motion: reduce) { .pl-svg * { transition: none !important; animation: none !important; } }
-.pl-icon[aria-pressed="true"] { background: var(--pl-paper-back); color: var(--pl-ink); border: 2.5px solid var(--pl-curve); }
+.pl-icon[aria-expanded="true"], .pl-icon[aria-pressed="true"] { background: var(--pl-paper-back); color: var(--pl-ink); border: 2.5px solid var(--pl-curve); }
 .pl-pendline { fill: none; stroke: var(--pl-ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.7; }
 .pl-markpoly { fill: var(--pl-accent); fill-opacity: 0.12; stroke: var(--pl-accent); stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
 

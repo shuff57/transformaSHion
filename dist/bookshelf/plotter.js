@@ -36,7 +36,7 @@
   var DRAW = ["line", "point", "polygon", "erase"];
   var PAPER = ["mark", "slide", "turn", "flip"];
   var LABEL = { point: "Dot", line: "Line", polygon: "Polygon", erase: "Eraser",
-    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper" };
+    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper", settings: "Settings" };
 
   function h(tag, attrs, text) {
     var n = document.createElement(tag);
@@ -115,6 +115,7 @@
       point: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
       polygon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><polygon points="5,19 12,4 20,16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="17" width="4" height="4" fill="var(--pl-accent)"/><rect x="10" y="2" width="4" height="4" fill="var(--pl-accent)"/><rect x="18" y="14" width="4" height="4" fill="var(--pl-accent)"/></svg>',
       paper: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M6 3h8l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5z" fill="var(--pl-accent)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+      settings: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
       erase: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M4 15 13 5l7 6-7 8H8z M8 19l-4-4 M10.5 8.5 16.5 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
     };
     var btn = {};
@@ -142,17 +143,20 @@
     var paperBtn = addBtn(bar, "paper", "", "pl-icon");
     paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
     paperBtn.setAttribute("aria-pressed", "false");
+    var setBtn = addBtn(bar, "settings", "", "pl-icon");
+    setBtn.innerHTML = ICON.settings; setBtn.setAttribute("aria-label", LABEL.settings); setBtn.setAttribute("title", LABEL.settings);
+    setBtn.setAttribute("aria-expanded", "false");
     root_.appendChild(bar);
 
     /* grid size: the visible x and y range, set by the reader */
-    var cfg = h("div", { class: "pl-bar pl-cfg", role: "group", "aria-label": "Grid size" });
+    var cfg = h("div", { class: "pl-bar pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
     function cfgField(label, key) {
       var lab = h("label", { class: "pl-cfglbl" }, label);
       var inp = h("input", { type: "number", step: "1", class: "pl-num", "data-cfg": key, "aria-label": label });
       lab.appendChild(inp); cin[key] = inp; cfg.appendChild(lab);
     }
-    cfg.appendChild(h("span", { class: "pl-drawlbl" }, "Grid:"));
+    cfg.appendChild(h("span", { class: "pl-drawlbl" }, "Grid size:"));
     cfgField("x from", "x0"); cfgField("to", "x1"); cfgField("y from", "y0"); cfgField("to", "y1");
     addBtn(cfg, "setgrid", "Set grid");
     addBtn(cfg, "resetgrid", "Reset grid");
@@ -616,7 +620,11 @@
 
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
-    cfg.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
+    function toggleSettings(open) {
+      cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    cfg.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
       var b = e.target.closest && e.target.closest("button[data-key]");
       if (!b || b.disabled) return;
@@ -629,6 +637,7 @@
         cancelPending(); setStatus(S.paper ? "Blank paper is on the grid. Mark points on it to copy them." : "");
       } else if (k === "reset") { S.T = I.slice(); S.moves = []; S.center = null; S.hAng = 0; S.flipFrom = null; setStatus("Paper reset."); }
       else if (k === "close") closePolygon();
+      else if (k === "settings") toggleSettings(cfg.hidden);
       else if (k === "togrid") markImageOnGrid();
       else if (k === "setgrid") applyGrid();
       else if (k === "resetgrid") {
