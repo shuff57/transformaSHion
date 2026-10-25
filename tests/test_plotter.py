@@ -217,13 +217,14 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     assert below                                                       # the toolbar sits under the grid
     for gone in ("Segment", "Close polygon", "Erase", "Point"):      # Close polygon only shows with 3 corners
         assert pg.get_by_role("button", name=gone, exact=True).count() == 0
-    assert pg.get_by_text("Setup", exact=True).count() == 0 and pg.locator("input, select, details").count() == 0
+    assert pg.get_by_text("Setup", exact=True).count() == 0 and pg.locator("select, details").count() == 0
+    assert pg.locator("input").count() == 4 and pg.locator("[aria-label='Grid size'] input").count() == 4   # only the grid-size boxes
     assert not pg.locator("[aria-label='Paper tools']").is_visible()   # the paper row appears only with the Paper toggle
     assert pg.locator("button[data-key=mark]").count() == 1 and not pg.locator("button[data-key=mark]").is_visible()
     pg.get_by_role("button", name="Paper", exact=True).click()
     names = pg.locator("[aria-label='Paper tools'] button:visible").evaluate_all("els => els.map(e => e.getAttribute('aria-label') || e.textContent.trim())")
     assert names[:4] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names
-    assert pg.locator(".pl-icon svg").count() == 4                     # icon buttons with an svg each
+    assert pg.locator(".pl-icon svg").count() == 5                     # icon buttons with an svg each: four tools and the paper
 
 
 def test_line_anchors_are_small_squares_and_dots_are_circles(grid):
@@ -485,6 +486,69 @@ def test_reduced_motion_page_loads_clean(browser, site):
     pg.wait_for_selector("svg.pl-svg")
     assert errs == []
     pg.close()
+
+
+# ---------------------------------------------------------------- paper icon, image to grid, grid size
+def test_the_paper_button_is_a_sheet_with_a_dog_ear(grid):
+    b = grid.pg.locator("button[data-key=paper]")
+    assert b.get_attribute("aria-label") == "Paper" and b.get_attribute("title") == "Paper"
+    assert b.inner_text().strip() == ""                                   # an icon, no text
+    d = b.locator("svg path").evaluate_all("els => els.map(e => e.getAttribute('d'))")
+    assert len(d) == 2 and d[1].startswith("M14 3v5h5")                  # the sheet outline, then the folded corner
+    grid.paper_on()
+    assert b.get_attribute("aria-pressed") == "true"
+
+
+def test_mark_image_on_grid_copies_the_moved_polygon_and_dots(grid):
+    grid.tool("Polygon")
+    for p in [(1, 2), (4, 2), (1, 6), (1, 2)]:
+        grid.click(*p)
+    assert [k for k, _ in grid.items()] == ["polygon"]
+    grid.paper_on(); grid.tool("Mark on paper")
+    grid.click(1, 4)                                                     # the polygon's left edge: copies the whole polygon
+    grid.click(-3, -3)                                                   # a lone point
+    grid.tool("Flip"); grid.click(5, -9); grid.click(5, 9)               # flip over x = 5
+    img = grid.pg.get_by_role("button", name="Mark image on grid")
+    assert img.is_enabled()
+    img.click()
+    got = sorted(grid.items())
+    assert ("polygon", "9,2;6,2;9,6") in got                            # the flipped triangle, corners in paper order
+    assert ("point", "13,-3") in got                                     # the lone mark landed at x = 10 - (-3)
+    img.click()                                                          # a second press adds nothing
+    assert sorted(grid.items()) == got
+    assert "already" in grid.status()
+
+
+def test_mark_image_on_grid_needs_a_mark(grid):
+    grid.paper_on()
+    assert grid.pg.get_by_role("button", name="Mark image on grid").is_disabled()
+
+
+def test_grid_size_can_be_set_and_reset(grid):
+    pg = grid.pg
+    row = pg.locator("[aria-label='Grid size']")
+    assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
+    below = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
+    assert below                                                         # the setting sits under the grid
+    for key, val in (("x0", "-3"), ("x1", "11"), ("y0", "0"), ("y1", "7")):
+        row.locator(f"input[data-cfg={key}]").fill(val)
+    row.get_by_role("button", name="Set grid", exact=True).click()
+    a = grid.svg
+    assert [a.get_attribute(n) for n in ("data-xmin", "data-xmax", "data-ymin", "data-ymax")] == ["-3", "11", "0", "7"]
+    grid.tool("Dot"); grid.click(9, 6)
+    assert grid.items() == [("point", "9,6")]                            # clicks use the new range
+    row.locator("input[data-cfg=x1]").fill("-2")
+    row.get_by_role("button", name="Set grid", exact=True).click()
+    assert a.get_attribute("data-xmax") == "11" and "2 units" in row.inner_text()   # too small: refused, grid unchanged
+    row.locator("input[data-cfg=x1]").fill("2.5")
+    row.get_by_role("button", name="Set grid", exact=True).click()
+    assert a.get_attribute("data-xmax") == "11" and "whole numbers" in row.inner_text()
+    row.locator("input[data-cfg=y1]").fill("90")
+    row.get_by_role("button", name="Set grid", exact=True).click()
+    assert a.get_attribute("data-ymax") == "7"
+    row.get_by_role("button", name="Reset grid").click()
+    assert [a.get_attribute(n) for n in ("data-xmin", "data-xmax", "data-ymin", "data-ymax")] == ["-10", "10", "-10", "10"]
+    assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
 
 
 if __name__ == "__main__":

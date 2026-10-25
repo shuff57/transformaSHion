@@ -90,6 +90,11 @@
 .pl-icon[aria-pressed="true"] { background: var(--pl-paper-back); color: var(--pl-ink); border: 2.5px solid var(--pl-curve); }
 .pl-pendline { fill: none; stroke: var(--pl-ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.7; }
 .pl-markpoly { fill: var(--pl-accent); fill-opacity: 0.12; stroke: var(--pl-accent); stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
+
+.pl-cfg { font-size: 0.9rem; }
+.pl-cfglbl { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pl-cfg .pl-num { width: 4.2rem; font: inherit; color: var(--pl-ink); background: var(--pl-panel); border: 1.5px solid var(--pl-axis); border-radius: 6px; padding: 0.2rem 0.3rem; }
+.pl-cfgmsg { font-size: 0.85rem; }
 </style>
 <style>
   :root { color-scheme: light dark; }
@@ -146,7 +151,7 @@
   var DRAW = ["line", "point", "polygon", "erase"];
   var PAPER = ["mark", "slide", "turn", "flip"];
   var LABEL = { point: "Dot", line: "Line", polygon: "Polygon", erase: "Eraser",
-    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip" };
+    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper" };
 
   function h(tag, attrs, text) {
     var n = document.createElement(tag);
@@ -224,6 +229,7 @@
       line: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="6" y="15" width="4" height="4" fill="var(--pl-accent)"/><rect x="14" y="5" width="4" height="4" fill="var(--pl-accent)"/></svg>',
       point: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
       polygon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><polygon points="5,19 12,4 20,16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="17" width="4" height="4" fill="var(--pl-accent)"/><rect x="10" y="2" width="4" height="4" fill="var(--pl-accent)"/><rect x="18" y="14" width="4" height="4" fill="var(--pl-accent)"/></svg>',
+      paper: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M6 3h8l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5z" fill="var(--pl-accent)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
       erase: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M4 15 13 5l7 6-7 8H8z M8 19l-4-4 M10.5 8.5 16.5 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
     };
     var btn = {};
@@ -248,8 +254,25 @@
     bar.appendChild(h("span", { class: "pl-drawlbl" }, "Draw:"));
     DRAW.forEach(function (k) { iconBtn(bar, k); });
     addBtn(bar, "close", "Close polygon");
-    var paperBtn = addBtn(bar, "paper", "Paper"); paperBtn.setAttribute("aria-pressed", "false");
+    var paperBtn = addBtn(bar, "paper", "", "pl-icon");
+    paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
+    paperBtn.setAttribute("aria-pressed", "false");
     root_.appendChild(bar);
+
+    /* grid size: the visible x and y range, set by the reader */
+    var cfg = h("div", { class: "pl-bar pl-cfg", role: "group", "aria-label": "Grid size" });
+    var cin = {};
+    function cfgField(label, key) {
+      var lab = h("label", { class: "pl-cfglbl" }, label);
+      var inp = h("input", { type: "number", step: "1", class: "pl-num", "data-cfg": key, "aria-label": label });
+      lab.appendChild(inp); cin[key] = inp; cfg.appendChild(lab);
+    }
+    cfg.appendChild(h("span", { class: "pl-drawlbl" }, "Grid:"));
+    cfgField("x from", "x0"); cfgField("to", "x1"); cfgField("y from", "y0"); cfgField("to", "y1");
+    addBtn(cfg, "setgrid", "Set grid");
+    addBtn(cfg, "resetgrid", "Reset grid");
+    var cfgMsg = h("span", { class: "pl-cfgmsg", role: "status", "aria-live": "polite" });
+    cfg.appendChild(cfgMsg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
@@ -257,9 +280,11 @@
     var cw = addBtn(pbar, "cw", "\u21BB 15\u00B0"); cw.setAttribute("aria-label", "Turn paper 15 degrees clockwise");
     addBtn(pbar, "reset", "Reset paper");
     addBtn(pbar, "clearmarks", "Clear marks");
+    addBtn(pbar, "togrid", "Mark image on grid");
     if (target) addBtn(pbar, "check", "Check", "pl-primary");
     root_.appendChild(pbar);
     root_.appendChild(hint);
+    root_.appendChild(cfg);                  // the grid-size row sits under the tool rows
 
     var status = h("p", { class: "pl-status", role: "status", "aria-live": "polite" });
     root_.appendChild(status);
@@ -442,6 +467,37 @@
       if (!dup) S.marks.push(apply(inverse(S.T), p));
     }
 
+    function markImageOnGrid() {      // copy where the paper's marks are now onto the grid, as polygons and dots
+      if (!S.marks.length) { setStatus("Mark some points on the paper first."); return; }
+      var inv = inverse(S.T), polyCorners = [], added = 0;
+      var cur = function (m) { var g = apply(S.T, m); return [num(g[0]), num(g[1])]; };
+      var same = function (a, b) { return Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6; };
+      S.outlines.forEach(function (o) {
+        var pts = o.pts.map(function (c) { var g = apply(S.T, c); return [num(g[0]), num(g[1])]; });
+        pts.forEach(function (q) { polyCorners.push(q); });
+        var dup = S.items.some(function (it) {
+          return it.kind === "polygon" && it.pts.length === pts.length && pts.every(function (q, i) { return same(q, it.pts[i]); });
+        });
+        if (!dup) { addItem("polygon", pts); added++; }
+      });
+      S.marks.forEach(function (m) {
+        var q = cur(m);
+        if (polyCorners.some(function (c) { return same(c, q); }) || hasPoint(q)) return;
+        addItem("point", [q]); added++;
+      });
+      setStatus(added ? "Marked the image on the grid." : "The image is already on the grid.");
+    }
+    function applyGrid() {
+      var v = {};
+      for (var k in cin) v[k] = cin[k].value.trim() === "" ? NaN : Number(cin[k].value);
+      var bad = ["x0", "x1", "y0", "y1"].some(function (k) { return !isFinite(v[k]) || v[k] !== Math.round(v[k]); });
+      if (bad) { cfgMsg.textContent = "Use whole numbers."; return false; }
+      if (v.x1 - v.x0 < 2 || v.y1 - v.y0 < 2) { cfgMsg.textContent = "Each range needs at least 2 units."; return false; }
+      if (v.x1 - v.x0 > 60 || v.y1 - v.y0 > 60) { cfgMsg.textContent = "Each range can be at most 60 units."; return false; }
+      S.xr = [v.x0, v.x1]; S.yr = [v.y0, v.y1]; S.kb = null; S.kbOn = false; cancelPending();
+      cfgMsg.textContent = "Grid set to x " + v.x0 + " to " + v.x1 + ", y " + v.y0 + " to " + v.y1 + ".";
+      return true;
+    }
     function check() {
       if (!S.marks.length) { setStatus("Mark some points on the paper, then check."); return; }
       var cur = S.marks.map(function (m) { return apply(S.T, m); });
@@ -563,6 +619,9 @@
       btn.clear.disabled = !S.items.length && !S.pending.length;
       btn.reset.disabled = !S.moves.length && !S.center;
       btn.clearmarks.disabled = !S.marks.length;
+      btn.togrid.disabled = !S.marks.length;
+      if (document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute("data-cfg")) { /* keep what the reader is typing */ }
+      else { cin.x0.value = S.xr[0]; cin.x1.value = S.xr[1]; cin.y0.value = S.yr[0]; cin.y1.value = S.yr[1]; }
       hint.textContent = S.paper ? hintText() : "";
       hint.hidden = !S.paper || !hint.textContent;
       status.textContent = S.paper ? S.status : "";
@@ -671,7 +730,8 @@
     svg.addEventListener("blur", function () { S.kbOn = false; render(); });
 
     /* ---- buttons ---- */
-    bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn);
+    bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
+    cfg.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
       var b = e.target.closest && e.target.closest("button[data-key]");
       if (!b || b.disabled) return;
@@ -684,6 +744,12 @@
         cancelPending(); setStatus(S.paper ? "Blank paper is on the grid. Mark points on it to copy them." : "");
       } else if (k === "reset") { S.T = I.slice(); S.moves = []; S.center = null; S.hAng = 0; S.flipFrom = null; setStatus("Paper reset."); }
       else if (k === "close") closePolygon();
+      else if (k === "togrid") markImageOnGrid();
+      else if (k === "setgrid") applyGrid();
+      else if (k === "resetgrid") {
+        S.xr = (preset.xr || [-10, 10]).slice(); S.yr = (preset.yr || [-10, 10]).slice(); S.kb = null; S.kbOn = false; cancelPending();
+        cfgMsg.textContent = "Grid reset.";
+      }
       else if (k === "clearmarks") { S.outlines = []; S.marks = []; setStatus("Marks cleared from the paper."); }
       else if (k === "cw") turnBy(-15);
       else if (k === "ccw") turnBy(15);

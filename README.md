@@ -53,8 +53,10 @@ Works with a mouse, touch and keyboard, in light and dark themes, and respects r
 empty and nothing is pre-drawn: the student plots every figure.
 
 - **Draw:** Line, Dot, Polygon and Eraser, plus Clear All. Clicks snap to grid points.
-- **Paper:** turn it on, then mark points on it (click a grid crossing or a corner; click a polygon's edge to copy the
+- **Paper** (the sheet-with-a-dog-ear button): turn it on, then mark points on it (click a grid crossing or a corner; click a polygon's edge to copy the
   whole polygon), and slide, turn or flip the paper. The paper's table and the list of moves stay under the grid.
+- **Mark image on grid:** after moving the paper, copies where its marks are now onto the grid as polygons and dots.
+- **Grid size:** a row under the tools sets the x and y range (whole numbers, 2 to 60 units each); Reset grid restores the setup's own.
 - **Check** (only on a setup that has a hidden `target`): compares the paper's marked points to the target and says only
   "Matches." or "Does not match." The target is never in the page.
 

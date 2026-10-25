@@ -83,3 +83,8 @@
 .pl-icon[aria-pressed="true"] { background: var(--pl-paper-back); color: var(--pl-ink); border: 2.5px solid var(--pl-curve); }
 .pl-pendline { fill: none; stroke: var(--pl-ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.7; }
 .pl-markpoly { fill: var(--pl-accent); fill-opacity: 0.12; stroke: var(--pl-accent); stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
+
+.pl-cfg { font-size: 0.9rem; }
+.pl-cfglbl { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pl-cfg .pl-num { width: 4.2rem; font: inherit; color: var(--pl-ink); background: var(--pl-panel); border: 1.5px solid var(--pl-axis); border-radius: 6px; padding: 0.2rem 0.3rem; }
+.pl-cfgmsg { font-size: 0.85rem; }
