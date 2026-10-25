@@ -145,23 +145,26 @@
     paperBtn.setAttribute("aria-pressed", "false");
     var setBtn = addBtn(bar, "settings", "", "pl-icon");
     setBtn.innerHTML = ICON.settings; setBtn.setAttribute("aria-label", LABEL.settings); setBtn.setAttribute("title", LABEL.settings);
-    setBtn.setAttribute("aria-expanded", "false");
+    setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
 
-    /* grid size: the visible x and y range, set by the reader */
-    var cfg = h("div", { class: "pl-bar pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
+    /* settings menu: the grid size (the visible x and y range), a popover under the gear */
+    var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
-    function cfgField(label, key) {
+    function cfgField(row, label, key) {
       var lab = h("label", { class: "pl-cfglbl" }, label);
       var inp = h("input", { type: "number", step: "1", class: "pl-num", "data-cfg": key, "aria-label": label });
-      lab.appendChild(inp); cin[key] = inp; cfg.appendChild(lab);
+      lab.appendChild(inp); cin[key] = inp; row.appendChild(lab);
     }
-    cfg.appendChild(h("span", { class: "pl-drawlbl" }, "Grid size:"));
-    cfgField("x from", "x0"); cfgField("to", "x1"); cfgField("y from", "y0"); cfgField("to", "y1");
-    addBtn(cfg, "setgrid", "Set grid");
-    addBtn(cfg, "resetgrid", "Reset grid");
-    var cfgMsg = h("span", { class: "pl-cfgmsg", role: "status", "aria-live": "polite" });
+    cfg.appendChild(h("p", { class: "pl-menutitle" }, "Grid size"));
+    var rowX = h("div", { class: "pl-menurow" }), rowY = h("div", { class: "pl-menurow" }), rowB = h("div", { class: "pl-menurow" });
+    cfgField(rowX, "x from", "x0"); cfgField(rowX, "to", "x1"); cfgField(rowY, "y from", "y0"); cfgField(rowY, "to", "y1");
+    cfg.appendChild(rowX); cfg.appendChild(rowY); cfg.appendChild(rowB);
+    addBtn(rowB, "setgrid", "Set grid");
+    addBtn(rowB, "resetgrid", "Reset grid");
+    var cfgMsg = h("p", { class: "pl-cfgmsg", role: "status", "aria-live": "polite" });
     cfg.appendChild(cfgMsg);
+    root_.appendChild(cfg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
@@ -173,7 +176,6 @@
     if (target) addBtn(pbar, "check", "Check", "pl-primary");
     root_.appendChild(pbar);
     root_.appendChild(hint);
-    root_.appendChild(cfg);                  // the grid-size row sits under the tool rows
 
     var status = h("p", { class: "pl-status", role: "status", "aria-live": "polite" });
     root_.appendChild(status);
@@ -622,7 +624,11 @@
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) { cfg.style.top = (bar.offsetTop + bar.offsetHeight + 4) + "px"; cin.x0.focus(); }
     }
+    document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
+      if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
+    });
     cfg.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {

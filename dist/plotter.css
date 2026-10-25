@@ -84,7 +84,12 @@
 .pl-pendline { fill: none; stroke: var(--pl-ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.7; }
 .pl-markpoly { fill: var(--pl-accent); fill-opacity: 0.12; stroke: var(--pl-accent); stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
 
-.pl-cfg { font-size: 0.9rem; }
+.pl { position: relative; }
+.pl-menu { position: absolute; left: 0; z-index: 5; box-sizing: border-box; width: min(21rem, 100%); display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink); border: 1.5px solid var(--pl-axis); border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); font-size: 0.9rem; }
+.pl-menu[hidden] { display: none; }
+.pl-menutitle { margin: 0; font-weight: 700; }
+.pl-menurow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .pl-cfglbl { display: inline-flex; align-items: center; gap: 0.3rem; }
-.pl-cfg .pl-num { width: 4.2rem; font: inherit; color: var(--pl-ink); background: var(--pl-panel); border: 1.5px solid var(--pl-axis); border-radius: 6px; padding: 0.2rem 0.3rem; }
-.pl-cfgmsg { font-size: 0.85rem; }
+.pl-menu .pl-num { width: 4.4rem; min-height: 44px; }
+.pl-cfgmsg { margin: 0; font-size: 0.85rem; min-height: 1.1em; }

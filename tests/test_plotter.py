@@ -535,7 +535,9 @@ def test_grid_size_can_be_set_and_reset(grid):
     assert row.is_visible() and gear.get_attribute("aria-expanded") == "true"
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
     below = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
-    assert below                                                         # the setting sits under the grid
+    assert below                                                         # the menu opens under the grid, on top of what follows
+    assert pg.evaluate("() => getComputedStyle(document.querySelector('.pl-cfg')).position") == "absolute"   # a popover, it does not push the page down
+    assert pg.evaluate("() => document.activeElement.getAttribute('data-cfg')") == "x0"
     for key, val in (("x0", "-3"), ("x1", "11"), ("y0", "0"), ("y1", "7")):
         row.locator(f"input[data-cfg={key}]").fill(val)
     row.get_by_role("button", name="Set grid", exact=True).click()
@@ -543,6 +545,8 @@ def test_grid_size_can_be_set_and_reset(grid):
     assert [a.get_attribute(n) for n in ("data-xmin", "data-xmax", "data-ymin", "data-ymax")] == ["-3", "11", "0", "7"]
     grid.tool("Dot"); grid.click(9, 6)
     assert grid.items() == [("point", "9,6")]                            # clicks use the new range
+    assert not row.is_visible()                                          # clicking the grid closed the menu
+    gear.click()
     row.locator("input[data-cfg=x1]").fill("-2")
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert a.get_attribute("data-xmax") == "11" and "2 units" in row.inner_text()   # too small: refused, grid unchanged
@@ -553,6 +557,10 @@ def test_grid_size_can_be_set_and_reset(grid):
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert a.get_attribute("data-ymax") == "7"
     row.get_by_role("button", name="Reset grid").click()
+    pg.mouse.click(5, 5)                                                 # a click elsewhere closes it too
+    assert not row.is_visible()
+    gear.click()
+    assert row.is_visible()
     row.locator("input[data-cfg=x0]").focus()
     pg.keyboard.press("Escape")                                          # Escape closes the menu and returns focus to the gear
     assert not row.is_visible() and gear.get_attribute("aria-expanded") == "false"
