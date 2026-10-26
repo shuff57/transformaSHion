@@ -640,6 +640,7 @@
       movesBox.hidden = !(S.paper && S.moves.length);
       while (movesList.firstChild) movesList.removeChild(movesList.firstChild);
       S.moves.forEach(function (m) { movesList.appendChild(h("li", null, moveText(m))); });
+      placeMenu();
     }
     function hintText() {
       switch (S.tool) {
@@ -744,8 +745,12 @@
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      if (open) { cfg.style.top = (bar.offsetTop + bar.offsetHeight + 4) + "px"; cin.x0.focus(); }
+      if (open) { placeMenu(); cin.x0.focus(); }
     }
+    function placeMenu() {                                       // keep the menu glued under the toolbar as the grid or width changes
+      if (!cfg.hidden) cfg.style.top = (bar.offsetTop + bar.offsetHeight + 4) + "px";
+    }
+    window.addEventListener("resize", placeMenu);
     document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
       if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
     });

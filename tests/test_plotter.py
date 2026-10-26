@@ -571,3 +571,15 @@ def test_grid_size_can_be_set_and_reset(grid):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+def test_settings_menu_follows_the_toolbar_when_the_grid_changes(grid):
+    pg = grid.pg
+    gear = pg.locator("button[data-key=settings]")
+    gear.click()
+    gap = "() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-tools, .pl-bar').getBoundingClientRect().bottom"
+    before = pg.evaluate(gap)
+    row = pg.locator("[aria-label='Grid size']")
+    for key, val in (("x0", "0"), ("x1", "20"), ("y0", "0"), ("y1", "4")):   # a much shorter grid moves the toolbar up
+        row.locator(f"input[data-cfg={key}]").fill(val)
+    row.get_by_role("button", name="Set grid", exact=True).click()
+    assert abs(pg.evaluate(gap) - before) < 1
