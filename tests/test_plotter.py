@@ -584,3 +584,12 @@ def test_settings_menu_follows_the_toolbar_when_the_grid_changes(grid):
         row.locator(f"input[data-cfg={key}]").fill(val)
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert abs(pg.evaluate(gap) - before) < 1
+
+def test_navigation_keys_inside_the_tool_do_not_reach_the_host(grid):
+    pg = grid.pg
+    pg.evaluate("() => { window.__keys = []; document.addEventListener('keydown', e => window.__keys.push(e.key)); }")   # a host (slide deck) listens on the document
+    pg.locator("button[data-key=line]").focus(); pg.keyboard.press("Space"); pg.keyboard.press("ArrowRight")
+    pg.locator(".pl-svg").focus(); pg.keyboard.press("ArrowRight"); pg.keyboard.press("PageDown")
+    assert pg.evaluate("() => window.__keys") == []
+    pg.locator("body").click(position={"x": 1, "y": 1}); pg.keyboard.press("ArrowRight")
+    assert pg.evaluate("() => window.__keys") == ["ArrowRight"]                    # outside the tool the host still hears keys

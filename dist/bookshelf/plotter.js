@@ -635,6 +635,9 @@
     document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
       if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
     });
+    root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space or arrows in the tool into navigation
+      if (e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown") e.stopPropagation();
+    });
     cfg.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
