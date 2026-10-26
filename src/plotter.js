@@ -21,7 +21,7 @@
       target: [[9, 2], [6, 2], [9, 6]] },
     { id: "parallel", title: "Graphing grid", xr: [-3, 11], yr: [0, 7],
       note: "Plot the triangle and both mirror lines from the coordinates in the step. Mark the corners on the paper, then move the paper.",
-      target: [[7, 1], [7, 4], [9, 1]] },
+      targets: [[[7, 1], [7, 4], [9, 1]], [[5, 1], [5, 4], [7, 1]]] },
     { id: "kite", title: "Graphing grid", xr: [0, 40], yr: [0, 22],
       note: "Plot the eight anchor points of the kite. Mark them on the paper, then move the paper." },
     { id: "turn", title: "Graphing grid", xr: [-1, 9], yr: [-2, 8],
@@ -90,7 +90,7 @@
     var presets = opts.presets && opts.presets.length ? opts.presets : PRESETS;
     var preset = presets[0];
     for (var i = 0; i < presets.length; i++) if (presets[i].id === opts.preset) preset = presets[i];
-    var target = preset.target && preset.target.length ? preset.target : null;   // stays in this closure: never written to the DOM
+    var targets = (preset.targets || (preset.target ? [preset.target] : [])).filter(function (t) { return t && t.length; });   // stays in this closure: never written to the DOM
     var id = "pl" + (++uid);
 
     var S = {
@@ -173,7 +173,7 @@
     addBtn(pbar, "reset", "Reset paper");
     addBtn(pbar, "clearmarks", "Clear marks");
     addBtn(pbar, "togrid", "Mark image on grid");
-    if (target) addBtn(pbar, "check", "Check", "pl-primary");
+    if (targets.length) addBtn(pbar, "check", "Check", "pl-primary");
     root_.appendChild(pbar);
     root_.appendChild(hint);
 
@@ -393,8 +393,11 @@
       if (!S.marks.length) { setStatus("Mark some points on the paper, then check.", "check"); return; }
       var cur = S.marks.map(function (m) { return apply(S.T, m); });
       var key = function (p) { return Math.round(p[0] * 1e4) + "," + Math.round(p[1] * 1e4); };
-      var a = cur.map(key).sort(), b = target.map(key).sort();
-      var same = a.length === b.length && a.every(function (v, i) { return v === b[i]; });
+      var a = cur.map(key).sort();
+      var same = targets.some(function (t) {                      // any one of the preset's right answers
+        var b = t.map(key).sort();
+        return a.length === b.length && a.every(function (v, i) { return v === b[i]; });
+      });
       setStatus(same ? "Matches." : "Does not match.", "check");
     }
 
@@ -599,9 +602,14 @@
     svg.addEventListener("pointerup", function (e) { endPointer(e, false); });
     svg.addEventListener("pointercancel", function (e) { endPointer(e, true); });
     /* ---- keyboard ---- */
+    var viaPointer = false, kbEntered = false;                   // did the grid get focus from the keyboard (Tab) or from a click?
+    svg.addEventListener("pointerdown", function () { viaPointer = true; setTimeout(function () { viaPointer = false; }, 0); }, true);
+    svg.addEventListener("focus", function () { kbEntered = !viaPointer; });
     svg.addEventListener("keydown", function (e) {
       var k = e.key, st = S.snap;
       if (k === "Escape") { cancelPending(); setStatus(""); render(); return; }
+      if (!kbEntered) return;                                     // focused by a click: the keys belong to the host page, not the keyboard cursor
+      e.stopPropagation();
       var dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[k];
       if (dir) {
         e.preventDefault();
@@ -620,7 +628,7 @@
         render();
       }
     });
-    svg.addEventListener("blur", function () { S.kbOn = false; render(); });
+    svg.addEventListener("blur", function () { S.kbOn = false; kbEntered = false; render(); });
 
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
@@ -629,14 +637,16 @@
       if (open) { placeMenu(); cin.x0.focus(); }
     }
     function placeMenu() {                                       // keep the menu glued under the toolbar as the grid or width changes
-      if (!cfg.hidden) cfg.style.top = (bar.offsetTop + bar.offsetHeight + 4) + "px";
+      if (cfg.hidden) return;
+      cfg.style.top = (opts.menuUp ? bar.offsetTop - cfg.offsetHeight - 4 : bar.offsetTop + bar.offsetHeight + 4) + "px";
     }
     window.addEventListener("resize", placeMenu);
     document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
       if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
     });
-    root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space or arrows in the tool into navigation
-      if (e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown") e.stopPropagation();
+    root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
+      var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
+      if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();
     });
     cfg.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });

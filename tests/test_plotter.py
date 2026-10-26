@@ -20,6 +20,8 @@ TEST_PRESETS = [
     {"id": "t", "title": "Test grid", "xr": [-10, 10], "yr": [-10, 10], "note": "n"},
     # the paper's marks after flipping over the y-axis (x = 0) land here
     {"id": "chk", "title": "Check grid", "xr": [-10, 10], "yr": [-10, 10], "target": [[-7, 3], [-8, 3], [-7, 5]]},
+    {"id": "chk2", "title": "Two answers", "xr": [-10, 10], "yr": [-10, 10],       # a preset may accept more than one result
+     "targets": [[[-7, 3], [-8, 3], [-7, 5]], [[7, 3], [8, 3], [7, 5]]]},
     {"id": "tiny", "title": "Small", "xr": [0, 5], "yr": [0, 5]},
 ]
 
@@ -585,11 +587,30 @@ def test_settings_menu_follows_the_toolbar_when_the_grid_changes(grid):
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert abs(pg.evaluate(gap) - before) < 1
 
-def test_navigation_keys_inside_the_tool_do_not_reach_the_host(grid):
+def test_keys_the_tool_uses_do_not_reach_the_host_but_the_rest_do(grid):
     pg = grid.pg
     pg.evaluate("() => { window.__keys = []; document.addEventListener('keydown', e => window.__keys.push(e.key)); }")   # a host (slide deck) listens on the document
-    pg.locator("button[data-key=line]").focus(); pg.keyboard.press("Space"); pg.keyboard.press("ArrowRight")
-    pg.locator(".pl-svg").focus(); pg.keyboard.press("ArrowRight"); pg.keyboard.press("PageDown")
-    assert pg.evaluate("() => window.__keys") == []
-    pg.locator("body").click(position={"x": 1, "y": 1}); pg.keyboard.press("ArrowRight")
-    assert pg.evaluate("() => window.__keys") == ["ArrowRight"]                    # outside the tool the host still hears keys
+    keys = lambda: pg.evaluate("() => window.__keys.splice(0)")
+    grid.click(1, 1); pg.keyboard.press("ArrowRight")
+    assert keys() == ["ArrowRight"]                                              # focus left on the grid by a mouse click must not trap the presenter
+    pg.locator("button[data-key=line]").focus(); pg.keyboard.press("Space")
+    assert keys() == []                                                          # Space presses the button, it does not turn the slide
+    pg.keyboard.press("ArrowRight")
+    assert keys() == ["ArrowRight"]                                              # an arrow on a button is not the tool's: the host still advances
+    pg.locator("button[data-key=settings]").click(); pg.keyboard.press("ArrowRight")
+    assert keys() == []                                                          # typing in a grid-size box keeps its keys
+    pg.keyboard.press("Escape"); pg.locator(".pl-svg").focus(); pg.keyboard.press("Shift+Tab"); pg.keyboard.press("Tab")
+    keys(); pg.keyboard.press("ArrowRight")
+    assert keys() == []                                                          # keyboard focus on the grid: arrows move its cursor
+
+
+def test_check_accepts_any_one_of_several_targets(browser, site):
+    pg = browser.new_page(viewport={"width": 900, "height": 1000})
+    pg.goto(site + "/raw.html?p=chk2"); pg.wait_for_selector("svg.pl-svg")
+    g = Grid(pg); _flip_marks_over_the_y_axis(g)
+    pg.get_by_role("button", name="Check").click()
+    assert g.status() == "Matches."                          # still on the second target
+    g.tool("Flip"); g.click(0, 2, dx=2)
+    pg.get_by_role("button", name="Check").click()
+    assert g.status() == "Matches."                          # now on the first
+    pg.close()
