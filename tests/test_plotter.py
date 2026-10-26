@@ -394,6 +394,7 @@ def test_check_says_matches_only_when_the_paper_lands_on_the_target(chk):
     chk.tool("Flip"); chk.click(0, 2, dx=2)
     chk.pg.get_by_role("button", name="Check").click()
     assert chk.status() == "Matches."
+    assert chk.pg.locator(".pl-status").get_attribute("data-kind") == "check"   # a deck can show Check results and hide the other status lines
 
 
 def test_check_does_not_match_a_wrong_move(chk):

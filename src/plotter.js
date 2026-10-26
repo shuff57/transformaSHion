@@ -245,7 +245,7 @@
     }
 
     /* ---- actions ---- */
-    function setStatus(t) { S.status = t || ""; }
+    function setStatus(t, kind) { S.status = t || ""; S.kind = t ? (kind || "") : ""; }
     function cancelPending() { S.pending = []; S.flipFrom = null; S.preview = null; }
     function selectTool(t) {
       S.tool = t; cancelPending(); S.down = false; setStatus("");
@@ -390,12 +390,12 @@
       return true;
     }
     function check() {
-      if (!S.marks.length) { setStatus("Mark some points on the paper, then check."); return; }
+      if (!S.marks.length) { setStatus("Mark some points on the paper, then check.", "check"); return; }
       var cur = S.marks.map(function (m) { return apply(S.T, m); });
       var key = function (p) { return Math.round(p[0] * 1e4) + "," + Math.round(p[1] * 1e4); };
       var a = cur.map(key).sort(), b = target.map(key).sort();
       var same = a.length === b.length && a.every(function (v, i) { return v === b[i]; });
-      setStatus(same ? "Matches." : "Does not match.");
+      setStatus(same ? "Matches." : "Does not match.", "check");
     }
 
     /* ---- drawing ---- */
@@ -516,6 +516,7 @@
       hint.textContent = S.paper ? hintText() : "";
       hint.hidden = !S.paper || !hint.textContent;
       status.textContent = S.paper ? S.status : "";
+      status.setAttribute("data-kind", S.paper ? S.kind || "" : "");
       var q;
       movesBox.hidden = !(S.paper && S.moves.length);
       while (movesList.firstChild) movesList.removeChild(movesList.firstChild);
