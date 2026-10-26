@@ -602,6 +602,10 @@ def test_keys_the_tool_uses_do_not_reach_the_host_but_the_rest_do(grid):
     pg.keyboard.press("Escape"); pg.locator(".pl-svg").focus(); pg.keyboard.press("Shift+Tab"); pg.keyboard.press("Tab")
     keys(); pg.keyboard.press("ArrowRight")
     assert keys() == []                                                          # keyboard focus on the grid: arrows move its cursor
+    grid.click(2, 2); pg.keyboard.press("ArrowRight")
+    assert keys() == ["ArrowRight"]                                              # a click on a keyboard-focused grid hands the keys back to the host
+    pg.keyboard.press("Shift+Tab"); pg.keyboard.press("Tab"); keys(); pg.keyboard.press("Escape"); keys(); pg.keyboard.press("ArrowRight")
+    assert keys() == ["ArrowRight"]                                              # and Escape releases the cursor
 
 
 def test_check_accepts_any_one_of_several_targets(browser, site):

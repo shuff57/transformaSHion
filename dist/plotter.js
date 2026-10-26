@@ -21,7 +21,7 @@
       target: [[9, 2], [6, 2], [9, 6]] },
     { id: "parallel", title: "Graphing grid", xr: [-3, 11], yr: [0, 7],
       note: "Plot the triangle and both mirror lines from the coordinates in the step. Mark the corners on the paper, then move the paper.",
-      targets: [[[7, 1], [7, 4], [9, 1]], [[5, 1], [5, 4], [7, 1]]] },
+      targets: [[[7, 1], [7, 4], [9, 1]], [[5, 1], [5, 4], [7, 1]], [[5, 1], [5, 4], [3, 1]]] },
     { id: "kite", title: "Graphing grid", xr: [0, 40], yr: [0, 22],
       note: "Plot the eight anchor points of the kite. Mark them on the paper, then move the paper." },
     { id: "turn", title: "Graphing grid", xr: [-1, 9], yr: [-2, 8],
@@ -603,11 +603,11 @@
     svg.addEventListener("pointercancel", function (e) { endPointer(e, true); });
     /* ---- keyboard ---- */
     var viaPointer = false, kbEntered = false;                   // did the grid get focus from the keyboard (Tab) or from a click?
-    svg.addEventListener("pointerdown", function () { viaPointer = true; setTimeout(function () { viaPointer = false; }, 0); }, true);
+    svg.addEventListener("pointerdown", function () { kbEntered = false; viaPointer = true; setTimeout(function () { viaPointer = false; }, 0); }, true);
     svg.addEventListener("focus", function () { kbEntered = !viaPointer; });
     svg.addEventListener("keydown", function (e) {
       var k = e.key, st = S.snap;
-      if (k === "Escape") { cancelPending(); setStatus(""); render(); return; }
+      if (k === "Escape") { cancelPending(); setStatus(""); kbEntered = false; render(); return; }
       if (!kbEntered) return;                                     // focused by a click: the keys belong to the host page, not the keyboard cursor
       e.stopPropagation();
       var dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[k];
