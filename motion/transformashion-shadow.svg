@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="sh-title sh-desc">
+  <title id="sh-title">transformaSHion — shadow and echo</title>
+  <desc id="sh-desc">The letters S and H lift off the cream page, trailing two faint copies of themselves. A soft shadow tracks beneath them as they slide up and to the right, turn half around, flip face down and turn into an outline, then slide home and flip face up. An accent rule draws itself beneath the S and H as they land.</desc>
+
+  <style>
+    /* Minimal type-only treatment: no grid, no paper. The motion is carried by a cast shadow and two echo copies. */
+    svg {
+      --loop: 7.2s;
+      --ink: #141413;
+      --accent: #b3520f;
+      --bg: #f5f3ea;
+      font-family: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+      text-rendering: geometricPrecision;
+    }
+    @media (prefers-color-scheme: dark) {
+      svg { --ink: #faf9f5; --accent: #e0a96d; --bg: #26241d; }
+    }
+
+    .bg { fill: var(--bg); }
+    .word { fill: var(--ink); font-size: 150px; }
+
+    .sh-move { transform-box: fill-box; transform-origin: 50% 50%; animation: sh-move var(--loop) infinite; }
+    @keyframes sh-move {
+      0%, 7%   { transform: translate(0, 0) rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1); }
+      20%      { transform: translate(130px, -68px) rotate(0deg); animation-timing-function: linear; }
+      23%      { transform: translate(130px, -68px) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+      37%      { transform: translate(130px, -68px) rotate(180deg); animation-timing-function: linear; }
+      47%      { transform: translate(130px, -68px) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
+      66%      { transform: translate(0, 0) rotate(360deg); animation-timing-function: linear; }
+      100%     { transform: translate(0, 0) rotate(360deg); }
+    }
+    .sh-flip { transform-box: fill-box; transform-origin: 50% 50%; animation: sh-flip var(--loop) infinite; }
+    @keyframes sh-flip {
+      0%, 37%   { transform: scaleX(1); animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1); }
+      47%, 66%  { transform: scaleX(-1); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+      76%, 100% { transform: scaleX(1); }
+    }
+
+    /* The two copies trail behind the real letters and dissolve into the page. */
+    .echo text { fill: var(--accent); }
+    .echo-a { opacity: 0.18; }
+    .echo-b { opacity: 0.09; }
+    .echo-a .sh-move, .echo-a .sh-flip { animation-delay: 0.10s; }
+    .echo-b .sh-move, .echo-b .sh-flip { animation-delay: 0.20s; }
+
+    /* The cast shadow lags the letters slightly and lifts with them. */
+    .shadow-track { transform: translate(14px, 16px); animation: shadow-depth var(--loop) linear infinite; }
+    .shadow-ink { fill: var(--ink); opacity: 0.15; filter: url(#sh-soft); }
+    @keyframes shadow-depth {
+      0%, 7%    { opacity: 1; }
+      20%, 37%  { opacity: 0.62; }
+      47%, 66%  { opacity: 0.75; }
+      76%, 100% { opacity: 1; }
+    }
+
+    /* Face down: filled letters become a drawn outline. */
+    .sh-ink { fill-opacity: 1; stroke-opacity: 0; stroke: var(--accent); stroke-width: 1.5; animation: face var(--loop) linear infinite; }
+    @keyframes face {
+      0%, 40%   { fill-opacity: 1; stroke-opacity: 0; }
+      44%, 68%  { fill-opacity: 0; stroke-opacity: 0.95; }
+      73%, 100% { fill-opacity: 1; stroke-opacity: 0; }
+    }
+
+    /* The resting mark retracts as the SH leaves and is drawn again on landing. */
+    .rule { fill: var(--accent); opacity: 0.9; transform-box: fill-box; transform-origin: 0% 50%; animation: rule var(--loop) cubic-bezier(0.3, 0, 0.2, 1) infinite; }
+    @keyframes rule {
+      0%, 7%    { transform: scaleX(1); }
+      14%, 64%  { transform: scaleX(0); }
+      74%, 100% { transform: scaleX(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .echo { display: none; }
+      .shadow-track, .sh-move, .sh-flip, .sh-ink, .rule { animation: none; }
+    }
+  </style>
+
+  <defs>
+    <filter id="sh-soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <rect class="bg" width="1200" height="320"/>
+
+  <text class="word" x="83.5" y="225" textLength="649.7" lengthAdjust="spacing">transforma</text>
+  <text class="word" x="924.9" y="225" textLength="191.7" lengthAdjust="spacing">ion</text>
+
+  <g class="shadow-track" aria-hidden="true">
+    <g class="sh-move">
+      <g class="sh-flip">
+        <text class="word shadow-ink" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+      </g>
+    </g>
+  </g>
+
+  <g class="echo echo-b" aria-hidden="true">
+    <g class="sh-move"><g class="sh-flip">
+      <text class="word" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+    </g></g>
+  </g>
+  <g class="echo echo-a" aria-hidden="true">
+    <g class="sh-move"><g class="sh-flip">
+      <text class="word" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+    </g></g>
+  </g>
+
+  <rect class="rule" x="754" y="238" width="150" height="4" rx="2"/>
+
+  <g class="sh-move">
+    <g class="sh-flip">
+      <text class="word sh-ink" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+    </g>
+  </g>
+</svg>

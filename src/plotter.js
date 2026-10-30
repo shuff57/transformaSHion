@@ -657,7 +657,10 @@
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
-    function dockSteps() { (wide.matches ? left : root_).appendChild(movesBox); }   // wide: the left sidebar; narrow: back under the grid
+    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status; narrow: back under the grid
+      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); }
+      else { root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
+    }
     dockSteps();
     if (wide.addEventListener) wide.addEventListener("change", dockSteps);
     function toggleSettings(open) {

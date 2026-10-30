@@ -66,6 +66,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
   .pl-left .pl-movesh { margin: 0; font-size: inherit; font-weight: 700; opacity: 1; }
   .pl-left .pl-moves { margin: 0; padding-left: 1.3rem; font-size: inherit; }
+  .pl-left .pl-hint, .pl-left .pl-status { margin: 0; font-size: 0.85rem; }
+  .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }

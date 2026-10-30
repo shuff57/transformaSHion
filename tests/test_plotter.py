@@ -604,6 +604,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     steps = pg.evaluate("() => { const s = document.querySelector('.pl-movesbox'), g = document.querySelector('.pl-svg').getBoundingClientRect(), f = document.querySelector('.pl-frame').getBoundingClientRect(), r = s.getBoundingClientRect(); return [!!s.closest('.pl-left'), r.right <= g.left, Math.abs(r.top - f.top) < 1.5, s.offsetParent !== null, s.innerText.includes('Each move is listed here')]; }")
     assert steps == [True, True, True, True, True]                       # the Steps panel is out in the left sidebar from the start, level with the top of the grid, with a note until there is a move
     pg.get_by_role("button", name="Paper", exact=True).click()
+    guide = pg.evaluate("() => [!!document.querySelector('.pl-hint').closest('.pl-left'), !!document.querySelector('.pl-status').closest('.pl-left')]")
+    assert guide == [True, True]                                   # the hint and the status are steps text: they live in the Steps card, not under the grid
     under = pg.evaluate("() => { const g = document.querySelector('.pl-svg').getBoundingClientRect(), p = document.querySelector('.pl-pbar').getBoundingClientRect(); return p.left >= g.left - 1 && p.right <= g.right + 1; }")
     assert under                                                         # the paper tools stay inside the grid's column
     pg.close()

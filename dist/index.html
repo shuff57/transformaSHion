@@ -73,6 +73,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
   .pl-left .pl-movesh { margin: 0; font-size: inherit; font-weight: 700; opacity: 1; }
   .pl-left .pl-moves { margin: 0; padding-left: 1.3rem; font-size: inherit; }
+  .pl-left .pl-hint, .pl-left .pl-status { margin: 0; font-size: 0.85rem; }
+  .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }
@@ -838,7 +840,10 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
-    function dockSteps() { (wide.matches ? left : root_).appendChild(movesBox); }   // wide: the left sidebar; narrow: back under the grid
+    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status; narrow: back under the grid
+      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); }
+      else { root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
+    }
     dockSteps();
     if (wide.addEventListener) wide.addEventListener("change", dockSteps);
     function toggleSettings(open) {
