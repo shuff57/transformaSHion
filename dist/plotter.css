@@ -48,6 +48,11 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.35rem 0; align-items: center; }
 .pl-bar[hidden], .pl-bar [hidden], .pl-movesbox[hidden], .pl-hint[hidden] { display: none; }
 .pl-svgholder { margin-top: 0.4rem; }
+/* The grid and a right sidebar. The sidebar holds Settings; its menu opens to the left of the gear, over the grid. */
+.pl-main { display: flex; align-items: flex-start; gap: 0.5rem; }
+.pl-main .pl-svgholder { flex: 1 1 auto; min-width: 0; }
+.pl-side { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.4rem; }
+.pl-side .pl-menu { left: auto; right: calc(100% + 0.4rem); top: 0; width: min(21rem, calc(100vw - 7rem)); }
 .pl-drawlbl { margin: 0 0.1rem 0 0.3rem; font-size: 0.95rem; }
 .pl-icon { padding: 0.2rem; display: inline-flex; align-items: center; justify-content: center; }
 .pl-icon svg { display: block; }
@@ -60,7 +65,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 :root[data-theme="dark"] .pl-btn[aria-pressed="true"], [data-theme="dark"] .pl-btn[aria-pressed="true"] { color: #141413; }
 .pl-primary { background: var(--pl-accent); color: var(--pl-bg); border-color: var(--pl-accent); font-weight: 700; }
 :root[data-theme="dark"] .pl-primary, [data-theme="dark"] .pl-primary { color: #141413; }
-.pl-btn:focus-visible, .pl-num:focus-visible, .pl-setup summary:focus-visible, .pl-svg:focus-visible { outline: 3px solid var(--pl-curve); outline-offset: 2px; }
+.pl-btn:focus-visible, .pl-num:focus-visible, .pl-setup summary:focus-visible, .pl-svg.pl-kb:focus-visible { outline: 3px solid var(--pl-curve); outline-offset: 2px; }
+.pl-svg:focus { outline: none; }
 .pl-hint { margin: 0.25rem 0; font-size: 0.85rem; }
 .pl-svg { display: block; width: 100%; height: auto; max-width: 100%; background: var(--pl-bg); border: 1px solid var(--pl-line); border-radius: 8px;
   user-select: none; -webkit-user-select: none; cursor: crosshair; touch-action: pan-y pinch-zoom; }

@@ -214,7 +214,9 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     pg = grid.pg
     row = pg.locator("[aria-label='Drawing tools']")
     texts = row.evaluate("e => [...e.children].map(c => c.getAttribute('aria-label') || c.textContent.trim())")
-    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon", "Paper", "Settings"]
+    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon", "Paper"]
+    side = pg.evaluate("() => { const g = document.querySelector('.pl-side button[data-key=settings]').getBoundingClientRect(), s = document.querySelector('.pl-svg').getBoundingClientRect(); return g.left >= s.right; }")
+    assert side                                                        # Settings is the one button in the right sidebar, beside the grid
     below = pg.evaluate("() => document.querySelector('.pl-bar').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
     assert below                                                       # the toolbar sits under the grid
     for gone in ("Segment", "Close polygon", "Erase", "Point"):      # Close polygon only shows with 3 corners
@@ -537,8 +539,9 @@ def test_grid_size_can_be_set_and_reset(grid):
     gear.click()
     assert row.is_visible() and gear.get_attribute("aria-expanded") == "true"
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
-    below = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
-    assert below                                                         # the menu opens under the grid, on top of what follows
+    beside = pg.evaluate("() => { const m = document.querySelector('.pl-cfg').getBoundingClientRect(), g = document.querySelector('button[data-key=settings]').getBoundingClientRect(); return m.right <= g.left && m.top <= g.top + 1; }")
+    assert beside                                                        # the gear sits in the right sidebar; its menu opens to the left of it, on top of the grid
+    assert pg.evaluate("() => document.querySelector('.pl-side button[data-key=settings]') !== null and document.querySelector('.pl-main > .pl-svgholder .pl-svg') !== null".replace(" and ", " && "))
     assert pg.evaluate("() => getComputedStyle(document.querySelector('.pl-cfg')).position") == "absolute"   # a popover, it does not push the page down
     assert pg.evaluate("() => document.activeElement.getAttribute('data-cfg')") == "x0"
     for key, val in (("x0", "-3"), ("x1", "11"), ("y0", "0"), ("y1", "7")):
@@ -575,14 +578,14 @@ def test_grid_size_can_be_set_and_reset(grid):
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
 
-def test_settings_menu_follows_the_toolbar_when_the_grid_changes(grid):
+def test_settings_menu_stays_beside_the_gear_when_the_grid_changes(grid):
     pg = grid.pg
     gear = pg.locator("button[data-key=settings]")
     gear.click()
-    gap = "() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-tools, .pl-bar').getBoundingClientRect().bottom"
+    gap = "() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('button[data-key=settings]').getBoundingClientRect().top"
     before = pg.evaluate(gap)
     row = pg.locator("[aria-label='Grid size']")
-    for key, val in (("x0", "0"), ("x1", "20"), ("y0", "0"), ("y1", "4")):   # a much shorter grid moves the toolbar up
+    for key, val in (("x0", "0"), ("x1", "20"), ("y0", "0"), ("y1", "4")):   # a much shorter grid
         row.locator(f"input[data-cfg={key}]").fill(val)
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert abs(pg.evaluate(gap) - before) < 1

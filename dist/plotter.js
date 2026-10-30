@@ -115,7 +115,7 @@
       point: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
       polygon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><polygon points="5,19 12,4 20,16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="17" width="4" height="4" fill="var(--pl-accent)"/><rect x="10" y="2" width="4" height="4" fill="var(--pl-accent)"/><rect x="18" y="14" width="4" height="4" fill="var(--pl-accent)"/></svg>',
       paper: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M6 3h8l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5z" fill="var(--pl-accent)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-      settings: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9.04 5.00 L9.50 1.80 L14.50 1.80 L14.96 5.00 L14.86 4.96 L17.45 3.02 L20.98 6.55 L19.04 9.14 L19.00 9.04 L22.20 9.50 L22.20 14.50 L19.00 14.96 L19.04 14.86 L20.98 17.45 L17.45 20.98 L14.86 19.04 L14.96 19.00 L14.50 22.20 L9.50 22.20 L9.04 19.00 L9.14 19.04 L6.55 20.98 L3.02 17.45 L4.96 14.86 L5.00 14.96 L1.80 14.50 L1.80 9.50 L5.00 9.04 L4.96 9.14 L3.02 6.55 L6.55 3.02 L9.14 4.96Z M15.2 12a3.2 3.2 0 1 0-6.4 0 3.2 3.2 0 0 0 6.4 0Z" fill="currentColor" fill-rule="evenodd" stroke="currentColor" stroke-width="0.6" stroke-linejoin="round"/></svg>',
+      settings: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9.04 5.00 L9.50 1.80 L14.50 1.80 L14.96 5.00 L14.86 4.96 L17.45 3.02 L20.98 6.55 L19.04 9.14 L19.00 9.04 L22.20 9.50 L22.20 14.50 L19.00 14.96 L19.04 14.86 L20.98 17.45 L17.45 20.98 L14.86 19.04 L14.96 19.00 L14.50 22.20 L9.50 22.20 L9.04 19.00 L9.14 19.04 L6.55 20.98 L3.02 17.45 L4.96 14.86 L5.00 14.96 L1.80 14.50 L1.80 9.50 L5.00 9.04 L4.96 9.14 L3.02 6.55 L6.55 3.02 L9.14 4.96Z M15.2 12a3.2 3.2 0 1 0-6.4 0 3.2 3.2 0 0 0 6.4 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
       erase: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M4 15 13 5l7 6-7 8H8z M8 19l-4-4 M10.5 8.5 16.5 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
     };
     var btn = {};
@@ -135,7 +135,9 @@
     var svg = s("svg", { class: "pl-svg", tabindex: "0", role: "group", "aria-label":
       "Graph grid. Arrow keys move the cursor, Enter places or picks at the cursor, Escape cancels." });
     svgHolder.appendChild(svg);
-    root_.appendChild(svgHolder);
+    var main = h("div", { class: "pl-main" }), side = h("div", { class: "pl-side" });   // the grid, and a right sidebar that holds Settings
+    main.appendChild(svgHolder); main.appendChild(side);
+    root_.appendChild(main);
     addBtn(bar, "clear", "Clear All");
     bar.appendChild(h("span", { class: "pl-drawlbl" }, "Draw:"));
     DRAW.forEach(function (k) { iconBtn(bar, k); });
@@ -143,12 +145,12 @@
     var paperBtn = addBtn(bar, "paper", "", "pl-icon");
     paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
     paperBtn.setAttribute("aria-pressed", "false");
-    var setBtn = addBtn(bar, "settings", "", "pl-icon");
+    var setBtn = addBtn(side, "settings", "", "pl-icon");
     setBtn.innerHTML = ICON.settings; setBtn.setAttribute("aria-label", LABEL.settings); setBtn.setAttribute("title", LABEL.settings);
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
 
-    /* settings menu: the grid size (the visible x and y range), a popover under the gear */
+    /* settings menu: the grid size (the visible x and y range), a popover that opens to the left of the gear */
     var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
     function cfgField(row, label, key) {
@@ -164,7 +166,7 @@
     addBtn(rowB, "resetgrid", "Reset grid");
     var cfgMsg = h("p", { class: "pl-cfgmsg", role: "status", "aria-live": "polite" });
     cfg.appendChild(cfgMsg);
-    root_.appendChild(cfg);
+    side.appendChild(cfg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
@@ -534,7 +536,6 @@
       movesBox.hidden = !(S.paper && S.moves.length);
       while (movesList.firstChild) movesList.removeChild(movesList.firstChild);
       S.moves.forEach(function (m) { movesList.appendChild(h("li", null, moveText(m))); });
-      placeMenu();
     }
     function hintText() {
       switch (S.tool) {
@@ -613,11 +614,13 @@
     svg.addEventListener("pointercancel", function (e) { endPointer(e, true); });
     /* ---- keyboard ---- */
     var viaPointer = false, kbEntered = false;                   // did the grid get focus from the keyboard (Tab) or from a click?
-    svg.addEventListener("pointerdown", function () { kbEntered = false; viaPointer = true; setTimeout(function () { viaPointer = false; }, 0); }, true);
-    svg.addEventListener("focus", function () { kbEntered = !viaPointer; });
+    function setKb(v) { kbEntered = v; svg.classList.toggle("pl-kb", v); }   // the focus ring shows only for keyboard focus, never after a click
+    svg.addEventListener("pointerdown", function () { setKb(false); viaPointer = true; setTimeout(function () { viaPointer = false; }, 0); }, true);
+    svg.addEventListener("focus", function () { setKb(!viaPointer); });
+    svg.addEventListener("blur", function () { setKb(false); });
     svg.addEventListener("keydown", function (e) {
       var k = e.key, st = S.snap;
-      if (k === "Escape") { cancelPending(); setStatus(""); kbEntered = false; render(); return; }
+      if (k === "Escape") { cancelPending(); setStatus(""); setKb(false); render(); return; }
       if (!kbEntered) return;                                     // focused by a click: the keys belong to the host page, not the keyboard cursor
       e.stopPropagation();
       var dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[k];
@@ -641,16 +644,11 @@
     svg.addEventListener("blur", function () { S.kbOn = false; kbEntered = false; render(); });
 
     /* ---- buttons ---- */
-    bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); cfg.addEventListener("click", onBtn);
+    bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      if (open) { placeMenu(); cin.x0.focus(); }
+      if (open) cin.x0.focus();
     }
-    function placeMenu() {                                       // keep the menu glued under the toolbar as the grid or width changes
-      if (cfg.hidden) return;
-      cfg.style.top = (opts.menuUp ? bar.offsetTop - cfg.offsetHeight - 4 : bar.offsetTop + bar.offsetHeight + 4) + "px";
-    }
-    window.addEventListener("resize", placeMenu);
     document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
       if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
     });
