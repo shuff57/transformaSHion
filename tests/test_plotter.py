@@ -104,7 +104,7 @@ class Grid:
 
 @pytest.fixture
 def grid(browser, site):
-    pg = browser.new_page(viewport={"width": 900, "height": 1000})
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 900, "height": 1000})
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto(site + "/raw.html")
@@ -250,7 +250,7 @@ def test_no_hover_preview_and_no_coordinate_readout(grid):
 
 
 def test_every_integer_tick_is_labelled_on_a_small_grid(browser, site):
-    pg = browser.new_page()
+    pg = browser.new_page(reduced_motion="reduce")
     pg.goto(site + "/raw.html?p=tiny")
     pg.wait_for_selector("svg.pl-svg")
     labels = pg.locator("text.pl-tick").evaluate_all("els => els.map(e => e.textContent)")
@@ -381,7 +381,7 @@ def _flip_marks_over_the_y_axis(g):
 
 @pytest.fixture
 def chk(browser, site):
-    pg = browser.new_page(viewport={"width": 900, "height": 1000})
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 900, "height": 1000})
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     pg.goto(site + "/raw.html?p=chk")
@@ -434,7 +434,7 @@ def test_check_is_exact_a_one_unit_miss_does_not_match(chk):
 
 
 def test_a_preset_without_a_target_has_no_check_button(browser, site):
-    pg = browser.new_page()
+    pg = browser.new_page(reduced_motion="reduce")
     pg.goto(site + "/raw.html?p=t")
     pg.wait_for_selector("svg.pl-svg")
     pg.get_by_role("button", name="Paper", exact=True).click()
@@ -459,7 +459,7 @@ def test_the_hidden_target_is_never_in_the_page(chk):
 # ---------------------------------------------------------------- look
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_light_and_dark_use_the_book_tokens(browser, site, theme):
-    pg = browser.new_page(viewport={"width": 900, "height": 900})
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 900, "height": 900})
     pg.goto(site + f"/raw.html?theme={theme}")
     pg.wait_for_selector("svg.pl-svg")
     bg = pg.evaluate("() => getComputedStyle(document.querySelector('.pl-root')).backgroundColor")
@@ -470,7 +470,7 @@ def test_light_and_dark_use_the_book_tokens(browser, site, theme):
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_320px_has_no_horizontal_overflow_and_44px_targets(browser, site, theme):
-    pg = browser.new_page(viewport={"width": 320, "height": 700}, has_touch=True)
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 320, "height": 700}, has_touch=True)
     pg.goto(site + f"/raw.html?theme={theme}&p=chk")
     pg.wait_for_selector("svg.pl-svg")
     pg.get_by_role("button", name="Paper", exact=True).click()
@@ -580,7 +580,7 @@ def test_steps_and_paper_tools_sit_under_the_grid_on_narrow_screens(grid):
 
 
 def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
-    pg = browser.new_page(viewport={"width": 1280, "height": 800})
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 1280, "height": 800})
     pg.goto(site + "/raw.html?theme=light&p=blank")
     pg.wait_for_selector("svg.pl-svg")
     row = pg.locator("[aria-label='Grid size']")
@@ -648,7 +648,7 @@ def test_keys_the_tool_uses_do_not_reach_the_host_but_the_rest_do(grid):
 
 
 def test_check_accepts_any_one_of_several_targets(browser, site):
-    pg = browser.new_page(viewport={"width": 900, "height": 1000})
+    pg = browser.new_page(reduced_motion="reduce", viewport={"width": 900, "height": 1000})
     pg.goto(site + "/raw.html?p=chk2"); pg.wait_for_selector("svg.pl-svg")
     g = Grid(pg); _flip_marks_over_the_y_axis(g)
     pg.get_by_role("button", name="Check").click()
@@ -680,3 +680,19 @@ def test_the_paper_is_two_units_smaller_than_the_grid_and_its_toggle_sits_with_t
     grid.pg.get_by_role("button", name="Paper", exact=True).click()
     sheet = grid.pg.evaluate("() => { const s = document.querySelector('.pl-sheet').getBoundingClientRect(), g = document.querySelector('.pl-svg'), r = g.getBoundingClientRect(), k = r.width / g.viewBox.baseVal.width, u = +g.dataset.u * k, m = +g.dataset.m * k; return [(s.left - r.left - m) / u, (r.right - m - s.right) / u, (s.top - r.top - m) / u, (r.bottom - m - s.bottom) / u]; }")
     assert all(abs(v - 2) < 0.1 for v in sheet)                           # two units in from every edge of the grid
+
+
+def test_flip_folds_the_paper_over_with_a_short_animation(browser, site):
+    pg = browser.new_page(viewport={"width": 900, "height": 1000})       # motion allowed
+    pg.goto(site + "/raw.html"); pg.get_by_role("button", name="Paper", exact=True).click()
+    pg.get_by_role("button", name="Flip", exact=True).click()
+    a = pg.locator("svg.pl-svg"); box = a.bounding_box()
+    d = a.evaluate("s => [+s.dataset.xmin, +s.dataset.ymax, +s.dataset.u, +s.dataset.m, s.viewBox.baseVal.width]")
+    at = lambda x, y: (box["x"] + (d[3] + (x - d[0]) * d[2]) * box["width"] / d[4], box["y"] + (d[3] + (d[1] - y) * d[2]) * box["width"] / d[4])
+    pg.mouse.click(*at(0, -3)); pg.mouse.click(*at(0, 3))
+    seen = set()
+    for _ in range(40):
+        seen.add(pg.locator(".pl-sheet").get_attribute("data-t")); pg.wait_for_timeout(25)
+    assert len(seen) > 3                                                 # the sheet passes through in-between shapes
+    assert pg.locator(".pl-sheet").get_attribute("data-side") == "back"  # and ends face down
+    pg.close()

@@ -271,6 +271,11 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     var a = 2 * ux * ux - 1, b = 2 * ux * uy, d = 2 * uy * uy - 1;
     return [a, b, b, d, p[0] - (a * p[0] + b * p[1]), p[1] - (b * p[0] + d * p[1])];
   }
+  function foldScale(p, q, k) {     // squash everything across the line p-q by k: 1 leaves it, 0 is edge-on, -1 is the reflection
+    var dx = q[0] - p[0], dy = q[1] - p[1], L = Math.sqrt(dx * dx + dy * dy), ux = dx / L, uy = dy / L;
+    var a = ux * ux + k * uy * uy, b = (1 - k) * ux * uy, d = uy * uy + k * ux * ux;
+    return [a, b, b, d, p[0] - (a * p[0] + b * p[1]), p[1] - (b * p[0] + d * p[1])];
+  }
   function distSeg(px, py, a, b, infinite) {
     var dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
     var t = L2 ? ((px - a[0]) * dx + (py - a[1]) * dy) / L2 : 0;
@@ -504,9 +509,25 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
       logMove({ kind: "slide", dx: dx, dy: dy });
       setStatus(moveText({ kind: "slide", dx: dx, dy: dy }) + ".");
     }
+    var folding = false, reduceMotion = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : { matches: true };
+    function foldAnim(T0, p, q, T1) {      // the paper folds over the line: it narrows to an edge, then opens out face down
+      var t0 = null, dur = 650;
+      folding = true; S.T = T0;
+      function step(ts) {
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        S.T = k >= 1 ? T1 : compose(foldScale(p, q, Math.cos(Math.PI * e)), T0);
+        if (k >= 1) folding = false;
+        render();
+        if (k < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
     function foldOver(p, q) {
       if (p[0] === q[0] && p[1] === q[1]) { setStatus("Pick two different points."); return; }
+      var T0 = S.T;
       S.T = compose(reflectAcross(p, q), S.T);
+      if (!reduceMotion.matches && window.requestAnimationFrame) foldAnim(T0, p, q, S.T);
       S.center = null; S.hAng = 0; S.flipFrom = null;
       logMove({ kind: "flip", p: p, q: q });
       setStatus(moveText({ kind: "flip", p: p, q: q }) + ".");
@@ -801,7 +822,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 
     /* ---- pointer ---- */
     svg.addEventListener("pointerdown", function (e) {
-      if (e.button > 0) return;
+      if (e.button > 0 || folding) return;
       S.kbOn = false;
       var d = toDraw(e);
       try { svg.setPointerCapture(e.pointerId); } catch (x) { /* synthetic pointers */ }
@@ -871,6 +892,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     svg.addEventListener("blur", function () { setKb(false); });
     svg.addEventListener("keydown", function (e) {
       var k = e.key, st = S.snap;
+      if (folding) return;
       if (k === "Escape") { cancelPending(); setStatus(""); setKb(false); render(); return; }
       if (!kbEntered) return;                                     // focused by a click: the keys belong to the host page, not the keyboard cursor
       e.stopPropagation();
@@ -918,7 +940,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); if (wide.matches) return; toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
       var b = e.target.closest && e.target.closest("button[data-key]");
-      if (!b || b.disabled) return;
+      if (!b || b.disabled || folding) return;
       var k = b.getAttribute("data-key");
       if (DRAW.indexOf(k) >= 0 || (PAPER.indexOf(k) >= 0)) { selectTool(k); return; }
       if (k === "clear") { S.items = []; S.names = {}; S.nameSeq = 0; cancelPending(); setStatus(""); }
