@@ -64,6 +64,12 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 @media (min-width: 60rem) {
   .pl-side .pl-menu, .pl-side .pl-menu[hidden] { display: flex; position: static; width: 17rem; max-width: 100%; box-shadow: none; }
   .pl-side .pl-icon[data-key="settings"] { display: none; }
+  /* Centered grid: an empty column as wide as the sidebar on the left, so the grid sits in the middle and the sidebar to its right.
+     What sits under the grid (toolbar, paper tools, moves, status) lines up with the grid's column. */
+  .pl-main { display: grid; grid-template-columns: 17rem minmax(0, 1fr) 17rem; column-gap: 0.5rem; }
+  .pl-main::before { content: ""; }
+  .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
+  .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }
 .pl-drawlbl { margin: 0 0.1rem 0 0.3rem; font-size: 0.95rem; }
 .pl-icon { padding: 0.2rem; display: inline-flex; align-items: center; justify-content: center; }
@@ -147,15 +153,15 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   body { margin: 0; padding: 0.75rem 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: #26241d; color: #faf9f5; } }
   [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
-  main { max-width: 78rem; margin: 0 auto; }
+  main { max-width: 90rem; margin: 0 auto; }
   h1 { margin: 0 0 0.2rem; }
   .lede { margin: 0 0 0.6rem; font-style: italic; }
   /* The grid is square, so its width is also its height: cap it by the viewport
      height and the title, grid and toolbar fit one screen without scrolling. */
   #app { max-width: min(60rem, calc(100vh - 9.75rem)); margin: 0.4rem auto 0; }   /* 13rem of page chrome, less the 3.25rem sidebar that shares the grid's row */
-  /* On a wide screen the Settings panel is always out in the sidebar (17rem + 0.5rem gap), so the page is that much wider
-     and the grid keeps the size that fits the screen. */
-  @media (min-width: 60rem) { #app { max-width: min(74rem, calc(100vh + 4.25rem)); } }
+  /* On a wide screen the Settings sidebar (17rem + 0.5rem gap) is mirrored by an empty column on the left so the grid is centered;
+     the page is 2 x 17.5rem wider than the grid, which keeps the size that fits the screen. */
+  @media (min-width: 60rem) { #app { max-width: min(90rem, calc(100vh + 21.75rem)); } }
 </style>
 </head>
 <body>

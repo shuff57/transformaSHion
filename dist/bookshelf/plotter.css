@@ -57,6 +57,12 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 @media (min-width: 60rem) {
   .pl-side .pl-menu, .pl-side .pl-menu[hidden] { display: flex; position: static; width: 17rem; max-width: 100%; box-shadow: none; }
   .pl-side .pl-icon[data-key="settings"] { display: none; }
+  /* Centered grid: an empty column as wide as the sidebar on the left, so the grid sits in the middle and the sidebar to its right.
+     What sits under the grid (toolbar, paper tools, moves, status) lines up with the grid's column. */
+  .pl-main { display: grid; grid-template-columns: 17rem minmax(0, 1fr) 17rem; column-gap: 0.5rem; }
+  .pl-main::before { content: ""; }
+  .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
+  .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }
 .pl-drawlbl { margin: 0 0.1rem 0 0.3rem; font-size: 0.95rem; }
 .pl-icon { padding: 0.2rem; display: inline-flex; align-items: center; justify-content: center; }
