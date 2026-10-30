@@ -74,7 +74,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   .pl-left .pl-pbar { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; align-items: center; }
   .pl-left .pl-pbartitle { display: block; margin: 0; font-weight: 700; }
   .pl-left .pl-pbar .pl-btn { width: 100%; box-sizing: border-box; }
-  .pl-left .pl-pbar .pl-icon { grid-column: 2; }
+  .pl-left .pl-phead { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.35rem; }
+  .pl-left .pl-phead .pl-pbartitle { flex: 1 1 auto; }
+  .pl-left .pl-phead .pl-btn { width: auto; }
   .pl-left .pl-pbar [data-key="togrid"], .pl-left .pl-pbar [data-key="check"] { grid-column: 1 / -1; }
   .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
@@ -106,6 +108,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-movesempty[hidden] { display: none; }
 .pl-left:empty { display: none; }
 .pl-pbartitle { display: none; }
+.pl-phead { display: contents; }
 .pl-togt { margin-left: 0.4rem; font-size: 0.85rem; font-weight: 600; }
 .pl-setup { margin-top: 0.6rem; }
 .pl-setup summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--pl-accent); }

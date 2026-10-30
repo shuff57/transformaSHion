@@ -227,8 +227,8 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     assert pg.locator("button[data-key=mark]").count() == 1 and not pg.locator("button[data-key=mark]").is_visible()
     pg.get_by_role("button", name="Paper", exact=True).click()
     names = pg.locator("[aria-label='Paper tools'] button:visible").evaluate_all("els => els.map(e => e.getAttribute('aria-label') || e.textContent.trim())")
-    assert names[0] == "Paper" and names[1:5] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names   # the toggle sits with the paper tools
-    assert pg.locator(".pl-icon svg").count() == 6                     # icon buttons with an svg each: four tools, the paper and settings
+    assert names[:3] == ["Undo", "Redo", "Paper"] and names[3:7] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names   # the toggle sits with the paper tools
+    assert pg.locator(".pl-icon svg").count() == 8                     # icon buttons with an svg each: four tools, the paper and settings
 
 
 def test_line_anchors_are_small_squares_and_dots_are_circles(grid):
@@ -696,3 +696,19 @@ def test_flip_folds_the_paper_over_with_a_short_animation(browser, site):
     assert len(seen) > 3                                                 # the sheet passes through in-between shapes
     assert pg.locator(".pl-sheet").get_attribute("data-side") == "back"  # and ends face down
     pg.close()
+
+
+def test_undo_and_redo_step_through_what_happened_on_the_paper(grid):
+    pg = grid.pg
+    pg.get_by_role("button", name="Paper", exact=True).click()
+    undo, redo = pg.get_by_role("button", name="Undo", exact=True), pg.get_by_role("button", name="Redo", exact=True)
+    assert undo.is_disabled() and redo.is_disabled()
+    grid.tool("Slide"); pg.locator(".pl-svg").focus(); pg.keyboard.press("Shift+ArrowRight")
+    grid.tool("Flip"); grid.click(0, -3); grid.click(0, 3)
+    assert undo.is_enabled() and redo.is_disabled()
+    undo.click()
+    assert pg.locator(".pl-sheet").get_attribute("data-side") == "front" and len(grid.moves()) == 1   # the flip is undone, the slide stays
+    redo.click()
+    assert pg.locator(".pl-sheet").get_attribute("data-side") == "back" and len(grid.moves()) == 2
+    undo.click(); undo.click()
+    assert grid.moves() == [] and undo.is_disabled() and redo.is_enabled()

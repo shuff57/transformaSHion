@@ -36,7 +36,7 @@
   var DRAW = ["line", "point", "polygon", "erase"];
   var PAPER = ["mark", "slide", "turn", "flip"];
   var LABEL = { point: "Dot", line: "Line", polygon: "Polygon", erase: "Eraser",
-    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper", settings: "Settings" };
+    mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper", settings: "Settings", undo: "Undo", redo: "Redo" };
 
   function h(tag, attrs, text) {
     var n = document.createElement(tag);
@@ -121,6 +121,8 @@
       point: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
       polygon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><polygon points="5,19 12,4 20,16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="17" width="4" height="4" fill="var(--pl-accent)"/><rect x="10" y="2" width="4" height="4" fill="var(--pl-accent)"/><rect x="18" y="14" width="4" height="4" fill="var(--pl-accent)"/></svg>',
       paper: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M6 3h8l5 5v13H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5z" fill="var(--pl-accent)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+      undo: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9 8H4V3M4.5 8A8 8 0 1 1 4 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 1)"/></svg>',
+      redo: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M15 8h5V3M19.5 8A8 8 0 1 0 20 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 1)"/></svg>',
       settings: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9.04 5.00 L9.50 1.80 L14.50 1.80 L14.96 5.00 L14.86 4.96 L17.45 3.02 L20.98 6.55 L19.04 9.14 L19.00 9.04 L22.20 9.50 L22.20 14.50 L19.00 14.96 L19.04 14.86 L20.98 17.45 L17.45 20.98 L14.86 19.04 L14.96 19.00 L14.50 22.20 L9.50 22.20 L9.04 19.00 L9.14 19.04 L6.55 20.98 L3.02 17.45 L4.96 14.86 L5.00 14.96 L1.80 14.50 L1.80 9.50 L5.00 9.04 L4.96 9.14 L3.02 6.55 L6.55 3.02 L9.14 4.96Z M15.2 12a3.2 3.2 0 1 0-6.4 0 3.2 3.2 0 0 0 6.4 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
       erase: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M4 15 13 5l7 6-7 8H8z M8 19l-4-4 M10.5 8.5 16.5 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>',
     };
@@ -174,7 +176,12 @@
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools" });
     pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the left sidebar (wide screens)
-    var paperBtn = addBtn(pbar, "paper", "", "pl-icon");               // the paper toggle sits with the paper tools; the other tools show only while the paper is on
+    var phead = h("div", { class: "pl-phead" });                       // Paper title, Undo, Redo and the toggle share one row
+    pbar.appendChild(phead); phead.appendChild(pbar.firstChild);
+    var undoBtn = addBtn(phead, "undo", "", "pl-icon"), redoBtn = addBtn(phead, "redo", "", "pl-icon");
+    undoBtn.innerHTML = ICON.undo; redoBtn.innerHTML = ICON.redo;
+    [[undoBtn, "undo"], [redoBtn, "redo"]].forEach(function (a) { a[0].setAttribute("aria-label", LABEL[a[1]]); a[0].setAttribute("title", LABEL[a[1]]); });
+    var paperBtn = addBtn(phead, "paper", "", "pl-icon");               // the paper toggle sits with the paper tools; the other tools show only while the paper is on
     paperBtn.innerHTML = ICON.paper + '<span class="pl-togt">Off</span>'; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
     paperBtn.setAttribute("aria-pressed", "false");
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
@@ -328,6 +335,28 @@
       }
       requestAnimationFrame(step);
     }
+    /* undo / redo of what happens on the paper: its position, the moves, the marks and the copied polygons */
+    function pkey() {
+      return JSON.stringify([S.T.map(function (n) { return Math.round(n * 1e6) / 1e6; }), S.moves, S.marks.map(function (m) { return [m[0], m[1], m.label]; }), S.outlines]);
+    }
+    function copyMarks(list) { return list.map(function (m) { var c = m.slice(); c.label = m.label; c.primes = m.primes; return c; }); }
+    function pstate() {
+      return { T: S.T.slice(), moves: JSON.parse(JSON.stringify(S.moves)), outlines: JSON.parse(JSON.stringify(S.outlines)), marks: copyMarks(S.marks) };
+    }
+    var hist = [{ key: pkey(), st: pstate() }], hi = 0;
+    function track() {                                           // called on every draw: a change to the paper becomes a new step
+      if (folding || S.down || S.drag || S.turnLive) return;
+      var k = pkey();
+      if (k === hist[hi].key) return;
+      hist.length = hi + 1; hist.push({ key: k, st: pstate() });
+      if (hist.length > 200) hist.shift();
+      hi = hist.length - 1;
+    }
+    function goHist(i) {
+      var st = hist[i].st; hi = i;
+      S.T = st.T.slice(); S.moves = JSON.parse(JSON.stringify(st.moves)); S.outlines = JSON.parse(JSON.stringify(st.outlines)); S.marks = copyMarks(st.marks);
+      S.center = null; S.hAng = 0; S.flipFrom = null;
+    }
     function foldOver(p, q) {
       if (p[0] === q[0] && p[1] === q[1]) { setStatus("Pick two different points."); return; }
       var T0 = S.T;
@@ -454,6 +483,7 @@
 
     /* ---- drawing ---- */
     function render() {
+      track();
       layout();
       var w = W(), hgt = Hh(), x0 = S.xr[0], x1 = S.xr[1], y0 = S.yr[0], y1 = S.yr[1];
       svg.setAttribute("viewBox", "0 0 " + w + " " + hgt);
@@ -588,6 +618,7 @@
       btn.close.hidden = !(S.tool === "polygon" && S.pending.length >= 3);
       btn.ccw.hidden = btn.cw.hidden = !(S.paper && S.tool === "turn" && S.center);
       btn.clear.disabled = !S.items.length && !S.pending.length;
+      undoBtn.disabled = hi <= 0; redoBtn.disabled = hi >= hist.length - 1;
       btn.reset.disabled = !S.moves.length && !S.center;
       btn.clearmarks.disabled = !S.marks.length;
       btn.togrid.disabled = !S.marks.length;
@@ -753,6 +784,8 @@
         S.paper = !S.paper;
         if (!S.paper && PAPER.indexOf(S.tool) >= 0) S.tool = "line";
         cancelPending(); setStatus(S.paper ? "Blank paper is on the grid. Mark points on it to copy them." : "");
+      } else if (k === "undo") { if (hi > 0) { goHist(hi - 1); setStatus("Undid the last step on the paper."); }
+      } else if (k === "redo") { if (hi < hist.length - 1) { goHist(hi + 1); setStatus("Redid the step."); }
       } else if (k === "reset") { S.T = I.slice(); S.moves = []; S.center = null; S.hAng = 0; S.flipFrom = null; setStatus("Paper reset."); }
       else if (k === "close") closePolygon();
       else if (k === "settings") toggleSettings(cfg.hidden);
