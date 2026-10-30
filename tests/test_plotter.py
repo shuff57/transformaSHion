@@ -214,7 +214,7 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
     pg = grid.pg
     row = pg.locator("[aria-label='Drawing tools']")
     texts = row.evaluate("e => [...e.children].map(c => c.getAttribute('aria-label') || c.textContent.trim())")
-    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon", "Paper"]
+    assert texts == ["Clear All", "Draw:", "Line", "Dot", "Polygon", "Eraser", "Close polygon"]
     side = pg.evaluate("() => { const g = document.querySelector('.pl-side button[data-key=settings]').getBoundingClientRect(), s = document.querySelector('.pl-svg').getBoundingClientRect(); return g.left >= s.right; }")
     assert side                                                        # Settings is the one button in the right sidebar, beside the grid
     below = pg.evaluate("() => document.querySelector('.pl-bar').getBoundingClientRect().top >= document.querySelector('.pl-svg').getBoundingClientRect().bottom")
@@ -223,11 +223,11 @@ def test_toolbar_matches_the_myopenmath_layout(grid):
         assert pg.get_by_role("button", name=gone, exact=True).count() == 0
     assert pg.get_by_text("Setup", exact=True).count() == 0 and pg.locator("select, details").count() == 0
     assert pg.locator("input").count() == 4 and pg.locator("[aria-label='Grid size'] input").count() == 4   # only the grid-size boxes
-    assert not pg.locator("[aria-label='Paper tools']").is_visible()   # the paper row appears only with the Paper toggle
+    assert pg.locator("[aria-label='Paper tools'] button:visible").count() == 1   # before the paper is on, the paper row shows only its toggle
     assert pg.locator("button[data-key=mark]").count() == 1 and not pg.locator("button[data-key=mark]").is_visible()
     pg.get_by_role("button", name="Paper", exact=True).click()
     names = pg.locator("[aria-label='Paper tools'] button:visible").evaluate_all("els => els.map(e => e.getAttribute('aria-label') || e.textContent.trim())")
-    assert names[:4] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names
+    assert names[0] == "Paper" and names[1:5] == ["Mark on paper", "Slide", "Turn", "Flip"] and "Reset paper" in names   # the toggle sits with the paper tools
     assert pg.locator(".pl-icon svg").count() == 6                     # icon buttons with an svg each: four tools, the paper and settings
 
 
@@ -245,7 +245,7 @@ def test_no_hover_preview_and_no_coordinate_readout(grid):
     grid.pg.mouse.move(sx + 5, sy + 4)
     assert grid.pg.locator(".pl-cursor").count() == 0
     grid.click(3, 3)
-    assert grid.pg.locator(".pl-plbl, .pl-clbl:visible").count() == 0
+    assert grid.pg.locator(".pl-clbl:visible").count() == 0
     assert grid.status() == ""
 
 
@@ -601,8 +601,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     assert abs(c[0]) < 2 and abs(c[1]) < 2                               # the grid is centered in the tool, with the toolbar centered under it
     top = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-frame').getBoundingClientRect().top")
     assert abs(top) < 1.5                                                # the sidebar's top edge meets the top edge of the grid
-    steps = pg.evaluate("() => { const s = document.querySelector('.pl-movesbox'), g = document.querySelector('.pl-svg').getBoundingClientRect(), f = document.querySelector('.pl-frame').getBoundingClientRect(), r = s.getBoundingClientRect(); return [!!s.closest('.pl-left'), r.right <= g.left, Math.abs(r.top - f.top) < 1.5, s.offsetParent !== null, s.innerText.includes('Each move is listed here')]; }")
-    assert steps == [True, True, True, True, True]                       # the Steps panel is out in the left sidebar from the start, level with the top of the grid, with a note until there is a move
+    steps = pg.evaluate("() => { const s = document.querySelector('.pl-movesbox'), g = document.querySelector('.pl-svg').getBoundingClientRect(), f = document.querySelector('.pl-frame').getBoundingClientRect(), r = s.getBoundingClientRect(); return [!!s.closest('.pl-left'), r.right <= g.left, r.top >= f.top, s.offsetParent !== null, s.innerText.includes('Each move is listed here')]; }")
+    assert steps == [True, True, True, True, True]                       # the Steps panel is out in the left sidebar from the start, under the Paper card, with a note until there is a move
     pg.get_by_role("button", name="Paper", exact=True).click()
     guide = pg.evaluate("() => [!!document.querySelector('.pl-hint').closest('.pl-left'), !!document.querySelector('.pl-status').closest('.pl-left')]")
     assert guide == [True, True]                                   # the hint and the status are steps text: they live in the Steps card, not under the grid
@@ -657,3 +657,26 @@ def test_check_accepts_any_one_of_several_targets(browser, site):
     pg.get_by_role("button", name="Check").click()
     assert g.status() == "Matches."                          # now on the first
     pg.close()
+
+
+def test_plotted_points_get_letters_and_marked_images_get_primes(grid):
+    names = lambda: grid.pg.eval_on_selector_all(".pl-plbl", "e => e.map(x => x.textContent)")
+    grid.tool("Dot"); grid.click(-6, 3); grid.click(-4, 6)
+    assert names() == ["A", "B"]                                          # every plotted point is named in order
+    grid.pg.get_by_role("button", name="Paper", exact=True).click()
+    grid.tool("Mark on paper"); grid.click(-6, 3); grid.click(-4, 6)
+    grid.tool("Slide"); grid.pg.locator(".pl-svg").focus()
+    for _ in range(4): grid.pg.keyboard.press("Shift+ArrowRight")
+    grid.pg.get_by_role("button", name="Mark image on grid", exact=True).click()
+    assert names() == ["A", "B", "A'", "B'"]                              # the image points are the same letters with a prime
+    grid.pg.locator(".pl-svg").focus()
+    for _ in range(3): grid.pg.keyboard.press("Shift+ArrowRight")
+    grid.pg.get_by_role("button", name="Mark image on grid", exact=True).click()
+    assert "A''" in names() and "B''" in names()                          # a second image gets a double prime
+
+
+def test_the_paper_is_two_units_smaller_than_the_grid_and_its_toggle_sits_with_the_paper_tools(grid):
+    assert grid.pg.evaluate("() => !!document.querySelector('.pl-pbar [data-key=paper]') && !document.querySelector('.pl-bar:not(.pl-pbar) [data-key=paper]')")
+    grid.pg.get_by_role("button", name="Paper", exact=True).click()
+    sheet = grid.pg.evaluate("() => { const s = document.querySelector('.pl-sheet').getBoundingClientRect(), g = document.querySelector('.pl-svg'), r = g.getBoundingClientRect(), k = r.width / g.viewBox.baseVal.width, u = +g.dataset.u * k, m = +g.dataset.m * k; return [(s.left - r.left - m) / u, (r.right - m - s.right) / u, (s.top - r.top - m) / u, (r.bottom - m - s.bottom) / u]; }")
+    assert all(abs(v - 2) < 0.1 for v in sheet)                           # two units in from every edge of the grid

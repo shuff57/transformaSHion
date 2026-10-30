@@ -71,7 +71,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   .pl-left .pl-hint, .pl-left .pl-status { margin: 0; font-size: 0.85rem; }
   .pl-left .pl-pbar { flex: 0 0 auto; box-sizing: border-box; width: 17rem; max-width: 100%; margin: 0; padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink);
     border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
-  .pl-left .pl-pbartitle { display: block; flex: 0 0 100%; margin: 0; font-weight: 700; }
+  .pl-left .pl-pbartitle { display: block; flex: 1 1 auto; margin: 0; font-weight: 700; }
   .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
@@ -145,6 +145,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 @media (prefers-reduced-motion: reduce) { .pl-svg * { transition: none !important; animation: none !important; } }
 .pl-icon[aria-expanded="true"], .pl-icon[aria-pressed="true"] { background: var(--pl-paper-back); color: var(--pl-ink); border: 2.5px solid var(--pl-curve); }
 .pl-pendline { fill: none; stroke: var(--pl-ink); stroke-width: 2; stroke-dasharray: 5 5; opacity: 0.7; }
+.pl-plbl { fill: var(--pl-ink); font: italic 700 15px ui-serif, Georgia, serif; paint-order: stroke; stroke: var(--pl-bg); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
 .pl-markpoly { fill: var(--pl-accent); fill-opacity: 0.12; stroke: var(--pl-accent); stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
 
 .pl { position: relative; }

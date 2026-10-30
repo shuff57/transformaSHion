@@ -98,6 +98,7 @@
       tool: "line", items: [], pending: [], hover: null, preview: null, down: false, drag: null,
       paper: false, T: I.slice(), marks: [], outlines: [], moves: [], center: null, hAng: 0, flipFrom: null,
       status: "", kb: null, kbOn: false, turnLive: null,
+      names: {}, nameSeq: 0,                 // a letter for every plotted position (A, B, C ...), and how many have been handed out
     };
 
     host.innerHTML = "";
@@ -143,9 +144,6 @@
     bar.appendChild(h("span", { class: "pl-drawlbl" }, "Draw:"));
     DRAW.forEach(function (k) { iconBtn(bar, k); });
     addBtn(bar, "close", "Close polygon");
-    var paperBtn = addBtn(bar, "paper", "", "pl-icon");
-    paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
-    paperBtn.setAttribute("aria-pressed", "false");
     var setBtn = addBtn(side, "settings", "", "pl-icon");
     setBtn.innerHTML = ICON.settings; setBtn.setAttribute("aria-label", LABEL.settings); setBtn.setAttribute("title", LABEL.settings);
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
@@ -169,8 +167,11 @@
     cfg.appendChild(cfgMsg);
     side.appendChild(cfg);
 
-    var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
+    var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools" });
     pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the left sidebar (wide screens)
+    var paperBtn = addBtn(pbar, "paper", "", "pl-icon");               // the paper toggle sits with the paper tools; the other tools show only while the paper is on
+    paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
+    paperBtn.setAttribute("aria-pressed", "false");
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
     var ccw = addBtn(pbar, "ccw", "\u21BA 15\u00B0"); ccw.setAttribute("aria-label", "Turn paper 15 degrees counterclockwise");
     var cw = addBtn(pbar, "cw", "\u21BB 15\u00B0"); cw.setAttribute("aria-label", "Turn paper 15 degrees clockwise");
@@ -261,7 +262,15 @@
       S.tool = t; cancelPending(); S.down = false; setStatus("");
       render();
     }
+    function nk(q) { return num(q[0]) + "," + num(q[1]); }
+    function letter(i) {                                          // 0 -> A ... 25 -> Z, 26 -> AA
+      var out = "", n = i + 1, r;
+      while (n > 0) { r = (n - 1) % 26; out = String.fromCharCode(65 + r) + out; n = Math.floor((n - 1) / 26); }
+      return out;
+    }
+    function nameAt(q) { var k = nk(q); return S.names[k] || (S.names[k] = letter(S.nameSeq++)); }
     function addItem(kind, pts) {
+      if (kind !== "line") pts.forEach(nameAt);                  // dots and polygon corners are named; a line is not
       S.items.push({ id: ++uid, kind: kind, pts: pts });
     }
     function hasPoint(p) {
@@ -365,7 +374,10 @@
     function markPoint(p) {
       var dup = S.marks.some(function (m) {
         var g = apply(S.T, m); return Math.abs(g[0] - p[0]) < 1e-6 && Math.abs(g[1] - p[1]) < 1e-6; });
-      if (!dup) S.marks.push(apply(inverse(S.T), p));
+      if (dup) return;
+      var m = apply(inverse(S.T), p);
+      m.label = nameAt(p); m.primes = 0;                          // a mark keeps the name of the point it was copied from; each image marked on the grid adds a prime
+      S.marks.push(m);
     }
 
     function markImageOnGrid() {      // copy where the paper's marks are now onto the grid, as polygons and dots
@@ -373,9 +385,16 @@
       var inv = inverse(S.T), polyCorners = [], added = 0;
       var cur = function (m) { var g = apply(S.T, m); return [num(g[0]), num(g[1])]; };
       var same = function (a, b) { return Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6; };
+      var image = {}, primed = [];                                // where each mark is now -> its name with one more prime
+      S.marks.forEach(function (m) { image[nk(cur(m))] = m; });
+      function nameImage(q) {                                     // a new image point gets A', then A'' the next time; a spot that already has a name keeps it
+        var m = image[nk(q)];
+        if (m && !S.names[nk(q)]) { S.names[nk(q)] = m.label + new Array(m.primes + 2).join("'"); primed.push(m); }
+      }
       S.outlines.forEach(function (o) {
         var pts = o.pts.map(function (c) { var g = apply(S.T, c); return [num(g[0]), num(g[1])]; });
         pts.forEach(function (q) { polyCorners.push(q); });
+        pts.forEach(nameImage);
         var dup = S.items.some(function (it) {
           return it.kind === "polygon" && it.pts.length === pts.length && pts.every(function (q, i) { return same(q, it.pts[i]); });
         });
@@ -384,8 +403,9 @@
       S.marks.forEach(function (m) {
         var q = cur(m);
         if (polyCorners.some(function (c) { return same(c, q); }) || hasPoint(q)) return;
-        addItem("point", [q]); added++;
+        nameImage(q); addItem("point", [q]); added++;
       });
+      primed.forEach(function (m) { m.primes++; });
       setStatus(added ? "Marked the image on the grid." : "The image is already on the grid.");
     }
     function applyGrid() {
@@ -472,10 +492,28 @@
         }
       });
 
+      /* names of the plotted points: letters, and primes on an image marked from the paper */
+      var lg = s("g", { class: "pl-labels" }, svg), seen = {};
+      S.items.forEach(function (it) {
+        if (it.kind === "line") return;
+        var cx = 0, cy = 0;
+        it.pts.forEach(function (q) { cx += X(q[0]) / it.pts.length; cy += Y(q[1]) / it.pts.length; });
+        it.pts.forEach(function (q) {
+          var k = nk(q), lbl = S.names[k], dx = 1, dy = -1, L;
+          if (!lbl || seen[k]) return;
+          seen[k] = 1;
+          if (it.kind === "polygon") { dx = X(q[0]) - cx; dy = Y(q[1]) - cy; }   // a corner's name sits outside the polygon
+          L = Math.hypot(dx, dy) || 1;
+          var tx = s("text", { class: "pl-plbl", x: X(q[0]) + dx / L * 15, y: Y(q[1]) + dy / L * 15, "text-anchor": "middle", "dominant-baseline": "central", "data-name": lbl }, lg);
+          tx.textContent = lbl;
+        });
+      });
+
       /* the paper */
       if (S.paper) {
         var gp = s("g", { class: "pl-paperg", "clip-path": "url(#" + cid + ")" }, svg);
-        var cs = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(function (c) { return apply(S.T, c); });
+        var ins = Math.min(2, (x1 - x0) / 4, (y1 - y0) / 4);          // the sheet is 2 units short of the grid on every side, so it never reads as a tint on the background
+        var cs = [[x0 + ins, y0 + ins], [x1 - ins, y0 + ins], [x1 - ins, y1 - ins], [x0 + ins, y1 - ins]].map(function (c) { return apply(S.T, c); });
         var back = det(S.T) < 0;
         var sheet = s("polygon", { class: "pl-sheet" + (back ? " pl-back" : ""), "data-side": back ? "back" : "front",
           "data-t": S.T.map(function (n) { return Number(n.toFixed(6)); }).join(","),
@@ -489,6 +527,8 @@
           s("title", null, c).textContent = "Paper mark at " + pt(q);
         });
       }
+
+      svg.appendChild(lg);                                        // the names stay above the paper's tint
 
       /* what is in progress */
       var go = s("g", { class: "pl-over" }, svg), cur = S.preview;
@@ -522,9 +562,9 @@
         if (DRAW.indexOf(k) >= 0 || PAPER.indexOf(k) >= 0) btn[k].setAttribute("aria-pressed", S.tool === k ? "true" : "false");
       });
       paperBtn.setAttribute("aria-pressed", S.paper ? "true" : "false");
-      pbar.hidden = !S.paper;
+      Array.prototype.forEach.call(pbar.querySelectorAll("button"), function (b) { if (b !== paperBtn) b.hidden = !S.paper; });
       btn.close.hidden = !(S.tool === "polygon" && S.pending.length >= 3);
-      btn.ccw.hidden = btn.cw.hidden = !(S.tool === "turn" && S.center);
+      btn.ccw.hidden = btn.cw.hidden = !(S.paper && S.tool === "turn" && S.center);
       btn.clear.disabled = !S.items.length && !S.pending.length;
       btn.reset.disabled = !S.moves.length && !S.center;
       btn.clearmarks.disabled = !S.marks.length;
@@ -685,7 +725,7 @@
       if (!b || b.disabled) return;
       var k = b.getAttribute("data-key");
       if (DRAW.indexOf(k) >= 0 || (PAPER.indexOf(k) >= 0)) { selectTool(k); return; }
-      if (k === "clear") { S.items = []; cancelPending(); setStatus(""); }
+      if (k === "clear") { S.items = []; S.names = {}; S.nameSeq = 0; cancelPending(); setStatus(""); }
       else if (k === "paper") {
         S.paper = !S.paper;
         if (!S.paper && PAPER.indexOf(S.tool) >= 0) S.tool = "line";
