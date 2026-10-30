@@ -103,7 +103,7 @@
       tool: "line", items: [], pending: [], hover: null, preview: null, down: false, drag: null,
       paper: false, T: I.slice(), marks: [], outlines: [], moves: [], center: null, hAng: 0, flipFrom: null,
       status: "", kb: null, kbOn: false, turnLive: null,
-      names: {}, nameSeq: 0,                 // a letter for every plotted position (A, B, C ...), and how many have been handed out
+      names: {}, nameSeq: 0, lblOff: {}, lbl: null,     // lblOff: how far a name has been dragged from its usual spot, by position                 // a letter for every plotted position (A, B, C ...), and how many have been handed out
     };
 
     host.innerHTML = "";
@@ -555,7 +555,7 @@
           seen[k] = 1;
           if (it.kind === "polygon") { dx = X(q[0]) - cx; dy = Y(q[1]) - cy; }   // a corner's name sits outside the polygon
           L = Math.hypot(dx, dy) || 1;
-          var tx = s("text", { class: "pl-plbl", x: X(q[0]) + dx / L * 15, y: Y(q[1]) + dy / L * 15, "text-anchor": "middle", "dominant-baseline": "central", "data-name": lbl }, lg);
+          var tx = s("text", { class: "pl-plbl", x: X(q[0]) + dx / L * 15 + (S.lblOff[k] || [0, 0])[0], y: Y(q[1]) + dy / L * 15 + (S.lblOff[k] || [0, 0])[1], "text-anchor": "middle", "dominant-baseline": "central", "data-name": lbl, "data-k": k }, lg);
           tx.textContent = lbl;
         });
       });
@@ -656,12 +656,53 @@
       return "";
     }
 
+    /* ---- naming points ---- */
+    var lastTap = { k: "", t: 0 };
+    function editLabel(k) {
+      var tx = svg.querySelector('.pl-plbl[data-k="' + k + '"]'), old = S.names[k];
+      if (!tx || old === undefined) return;
+      var r = tx.getBoundingClientRect(), hr = svgHolder.getBoundingClientRect(), done = false;
+      var inp = h("input", { type: "text", class: "pl-lblinput", "aria-label": "Point name", maxlength: "8" });
+      inp.value = old;
+      inp.style.left = (r.left + r.width / 2 - hr.left - 34) + "px"; inp.style.top = (r.top + r.height / 2 - hr.top - 17) + "px";
+      svgHolder.appendChild(inp); inp.focus(); inp.select();
+      function finish(save) {
+        if (done) return; done = true;
+        var v = inp.value.trim();
+        inp.remove();
+        if (save && v && v !== old) {
+          S.names[k] = v;
+          S.marks.forEach(function (m) { if (m.label === old) m.label = v; });   // an image of this point keeps following its name
+          setStatus("Renamed " + old + " to " + v + ".");
+        }
+        render();
+      }
+      inp.addEventListener("keydown", function (e) {
+        e.stopPropagation();
+        if (e.key === "Enter") { e.preventDefault(); finish(true); }
+        else if (e.key === "Escape") { e.preventDefault(); finish(false); }
+      });
+      inp.addEventListener("blur", function () { finish(true); });
+    }
+    svg.addEventListener("dblclick", function (e) {            // the grid holds the pointer, so the event is aimed at the grid: use the name that was just pressed
+      if (lastTap.k && Date.now() - lastTap.t < 600) { e.preventDefault(); editLabel(lastTap.k); }
+    });
+
     /* ---- pointer ---- */
     svg.addEventListener("pointerdown", function (e) {
       if (e.button > 0 || folding) return;
       S.kbOn = false;
       var d = toDraw(e);
       try { svg.setPointerCapture(e.pointerId); } catch (x) { /* synthetic pointers */ }
+      var lt = e.target.closest && e.target.closest(".pl-plbl");
+      if (!lt) lastTap = { k: "", t: 0 };
+      if (lt) {                                                  // a point's name: drag it to move it, double-click it to rename it
+        var lk = lt.getAttribute("data-k"), now = Date.now();
+        S.lbl = { k: lk, x: d[0], y: d[1], o: (S.lblOff[lk] || [0, 0]).slice() };
+        if (e.pointerType === "touch" && lastTap.k === lk && now - lastTap.t < 400) { S.lbl = null; editLabel(lk); }   // touch screens have no double-click event
+        lastTap = { k: lk, t: now };
+        e.preventDefault(); return;
+      }
       if (S.paper && S.tool === "slide") {
         var p0 = toData(d);
         S.drag = { type: "slide", p0: p0, T0: S.T.slice(), dx: 0, dy: 0 };
@@ -678,6 +719,7 @@
     });
     svg.addEventListener("pointermove", function (e) {
       var d = toDraw(e);
+      if (S.lbl) { S.lblOff[S.lbl.k] = [S.lbl.o[0] + d[0] - S.lbl.x, S.lbl.o[1] + d[1] - S.lbl.y]; render(); return; }
       if (S.drag && S.drag.type === "slide") {
         var p = toData(d), st = S.snap;
         var dx = num(Math.round((p[0] - S.drag.p0[0]) / st) * st), dy = num(Math.round((p[1] - S.drag.p0[1]) / st) * st);
@@ -699,6 +741,7 @@
 
     });
     function endPointer(e, cancelled) {
+      if (S.lbl) { S.lbl = null; return; }
       var d = toDraw(e);
       if (S.drag) {
         var dr = S.drag; S.drag = null;
@@ -779,7 +822,7 @@
       if (!b || b.disabled || folding) return;
       var k = b.getAttribute("data-key");
       if (DRAW.indexOf(k) >= 0 || (PAPER.indexOf(k) >= 0)) { selectTool(k); return; }
-      if (k === "clear") { S.items = []; S.names = {}; S.nameSeq = 0; cancelPending(); setStatus(""); }
+      if (k === "clear") { S.items = []; S.names = {}; S.nameSeq = 0; S.lblOff = {}; cancelPending(); setStatus(""); }
       else if (k === "paper") {
         S.paper = !S.paper;
         if (!S.paper && PAPER.indexOf(S.tool) >= 0) S.tool = "line";

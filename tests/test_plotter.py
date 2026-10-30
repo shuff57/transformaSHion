@@ -712,3 +712,23 @@ def test_undo_and_redo_step_through_what_happened_on_the_paper(grid):
     assert pg.locator(".pl-sheet").get_attribute("data-side") == "back" and len(grid.moves()) == 2
     undo.click(); undo.click()
     assert grid.moves() == [] and undo.is_disabled() and redo.is_enabled()
+
+
+def test_a_point_name_can_be_renamed_with_a_double_click_and_dragged_around(grid):
+    pg = grid.pg
+    grid.tool("Dot"); grid.click(2, 2)
+    lab = pg.locator(".pl-plbl")
+    assert lab.text_content() == "A"
+    lab.dblclick()
+    box = pg.locator(".pl-lblinput")
+    assert box.is_visible() and box.input_value() == "A"
+    box.fill("P"); box.press("Enter")
+    assert lab.text_content() == "P" and pg.locator(".pl-lblinput").count() == 0
+    lab.dblclick(); pg.locator(".pl-lblinput").fill("Z"); pg.keyboard.press("Escape")
+    assert lab.text_content() == "P"                                        # Escape keeps the old name
+    before = lab.bounding_box()
+    cx, cy = before["x"] + before["width"] / 2, before["y"] + before["height"] / 2
+    pg.mouse.move(cx, cy); pg.mouse.down(); pg.mouse.move(cx + 60, cy + 40, steps=4); pg.mouse.up()
+    after = lab.bounding_box()
+    assert abs(after["x"] - before["x"] - 60) < 2 and abs(after["y"] - before["y"] - 40) < 2   # it follows the pointer
+    assert len(pg.locator(".pl-item").all()) == 1                          # and the drag did not plot a new point
