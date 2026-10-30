@@ -575,6 +575,10 @@ def test_grid_size_can_be_set_and_reset(grid):
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
 
 
+def test_steps_sit_under_the_grid_on_narrow_screens(grid):
+    assert grid.pg.evaluate("() => !document.querySelector('.pl-movesbox').closest('.pl-left')")   # narrow: the left sidebar is gone and the steps keep their place under the grid
+
+
 def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     pg = browser.new_page(viewport={"width": 1280, "height": 800})
     pg.goto(site + "/raw.html?theme=light&p=blank")
@@ -597,6 +601,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     assert abs(c[0]) < 2 and abs(c[1]) < 2                               # the grid is centered in the tool, with the toolbar centered under it
     top = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-frame').getBoundingClientRect().top")
     assert abs(top) < 1.5                                                # the sidebar's top edge meets the top edge of the grid
+    steps = pg.evaluate("() => { const s = document.querySelector('.pl-movesbox'), g = document.querySelector('.pl-svg').getBoundingClientRect(), f = document.querySelector('.pl-frame').getBoundingClientRect(), r = s.getBoundingClientRect(); return [!!s.closest('.pl-left'), r.right <= g.left, Math.abs(r.top - f.top) < 1.5, s.offsetParent !== null, s.innerText.includes('Each move is listed here')]; }")
+    assert steps == [True, True, True, True, True]                       # the Steps panel is out in the left sidebar from the start, level with the top of the grid, with a note until there is a move
     pg.get_by_role("button", name="Paper", exact=True).click()
     under = pg.evaluate("() => { const g = document.querySelector('.pl-svg').getBoundingClientRect(), p = document.querySelector('.pl-pbar').getBoundingClientRect(); return p.left >= g.left - 1 && p.right <= g.right + 1; }")
     assert under                                                         # the paper tools stay inside the grid's column

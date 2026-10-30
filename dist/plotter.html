@@ -67,7 +67,12 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   /* Centered grid: an empty column as wide as the sidebar on the left, so the grid sits in the middle and the sidebar to its right.
      What sits under the grid (toolbar, paper tools, moves, status) lines up with the grid's column. */
   .pl-main { display: grid; grid-template-columns: 17rem minmax(0, 1fr) 17rem; column-gap: 0.5rem; }
-  .pl-main::before { content: ""; }
+  /* The left sidebar holds the Steps (the paper's moves so far), in the same card style as Settings. It is always out. */
+  .pl-left .pl-movesbox, .pl-left .pl-movesbox[hidden] { display: flex; flex-direction: column; gap: 0.5rem; box-sizing: border-box; width: 17rem; max-width: 100%;
+    max-height: 28rem; overflow-y: auto; margin: 0; padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink);
+    border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
+  .pl-left .pl-movesh { margin: 0; font-size: inherit; font-weight: 700; opacity: 1; }
+  .pl-left .pl-moves { margin: 0; padding-left: 1.3rem; font-size: inherit; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }
@@ -93,6 +98,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-movesbox { margin-top: 0.3rem; }
 .pl-movesh { margin: 0; font-size: 0.85rem; opacity: 0.8; }
 .pl-moves { margin: 0.1rem 0 0; padding-left: 1.3rem; font-size: 0.8rem; }
+.pl-movesempty { margin: 0; font-size: 0.85rem; }
+.pl-movesempty[hidden] { display: none; }
+.pl-left:empty { display: none; }
 .pl-setup { margin-top: 0.6rem; }
 .pl-setup summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--pl-accent); }
 .pl-setupgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
@@ -309,7 +317,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
       "Graph grid. Arrow keys move the cursor, Enter places or picks at the cursor, Escape cancels." });
     svgHolder.appendChild(svg);
     var main = h("div", { class: "pl-main" }), side = h("div", { class: "pl-side" });   // the grid, and a right sidebar that holds Settings
-    main.appendChild(svgHolder); main.appendChild(side);
+    var left = h("div", { class: "pl-left" });                 // left sidebar: the steps (empty, so hidden, on narrow screens where they sit under the grid)
+    main.appendChild(left); main.appendChild(svgHolder); main.appendChild(side);
     root_.appendChild(main);
     addBtn(bar, "clear", "Clear All");
     bar.appendChild(h("span", { class: "pl-drawlbl" }, "Draw:"));
@@ -355,9 +364,10 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     var status = h("p", { class: "pl-status", role: "status", "aria-live": "polite" });
     root_.appendChild(status);
     var movesBox = h("div", { class: "pl-movesbox", hidden: "" });
-    movesBox.appendChild(h("p", { class: "pl-movesh" }, "Paper moves so far"));
+    movesBox.appendChild(h("p", { class: "pl-movesh" }, "Steps"));
+    var movesEmpty = h("p", { class: "pl-movesempty" }, "Turn on the paper, then slide, turn or flip it. Each move is listed here.");
     var movesList = h("ol", { class: "pl-moves" });
-    movesBox.appendChild(movesList);
+    movesBox.appendChild(movesEmpty); movesBox.appendChild(movesList);
     root_.appendChild(movesBox);
 
     /* ---- geometry between data and the drawing ---- */
@@ -706,7 +716,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
       status.textContent = S.paper ? S.status : "";
       status.setAttribute("data-kind", S.paper ? S.kind || "" : "");
       var q;
-      movesBox.hidden = !(S.paper && S.moves.length);
+      var hasMoves = !!(S.paper && S.moves.length);
+      movesBox.hidden = !hasMoves; movesEmpty.hidden = hasMoves;      // wide screens always show the Steps panel (CSS), with the note until there is a move
       while (movesList.firstChild) movesList.removeChild(movesList.firstChild);
       S.moves.forEach(function (m) { movesList.appendChild(h("li", null, moveText(m))); });
       alignSide();
@@ -715,7 +726,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
        Drop the sidebar by that margin (scaled to the rendered size) so its top meets the top of the grid. */
     function alignSide() {
       var r = svg.getBoundingClientRect();
-      if (r.width) side.style.marginTop = "calc(0.4rem + " + (M * r.width / W()).toFixed(1) + "px)";
+      if (r.width) side.style.marginTop = left.style.marginTop = "calc(0.4rem + " + (M * r.width / W()).toFixed(1) + "px)";
     }
     if (window.ResizeObserver) new ResizeObserver(alignSide).observe(svg); else window.addEventListener("resize", alignSide);
     function hintText() {
@@ -827,6 +838,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
+    function dockSteps() { (wide.matches ? left : root_).appendChild(movesBox); }   // wide: the left sidebar; narrow: back under the grid
+    dockSteps();
+    if (wide.addEventListener) wide.addEventListener("change", dockSteps);
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) cin.x0.focus();

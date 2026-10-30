@@ -60,7 +60,12 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   /* Centered grid: an empty column as wide as the sidebar on the left, so the grid sits in the middle and the sidebar to its right.
      What sits under the grid (toolbar, paper tools, moves, status) lines up with the grid's column. */
   .pl-main { display: grid; grid-template-columns: 17rem minmax(0, 1fr) 17rem; column-gap: 0.5rem; }
-  .pl-main::before { content: ""; }
+  /* The left sidebar holds the Steps (the paper's moves so far), in the same card style as Settings. It is always out. */
+  .pl-left .pl-movesbox, .pl-left .pl-movesbox[hidden] { display: flex; flex-direction: column; gap: 0.5rem; box-sizing: border-box; width: 17rem; max-width: 100%;
+    max-height: 28rem; overflow-y: auto; margin: 0; padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink);
+    border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
+  .pl-left .pl-movesh { margin: 0; font-size: inherit; font-weight: 700; opacity: 1; }
+  .pl-left .pl-moves { margin: 0; padding-left: 1.3rem; font-size: inherit; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
 }
@@ -86,6 +91,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-movesbox { margin-top: 0.3rem; }
 .pl-movesh { margin: 0; font-size: 0.85rem; opacity: 0.8; }
 .pl-moves { margin: 0.1rem 0 0; padding-left: 1.3rem; font-size: 0.8rem; }
+.pl-movesempty { margin: 0; font-size: 0.85rem; }
+.pl-movesempty[hidden] { display: none; }
+.pl-left:empty { display: none; }
 .pl-setup { margin-top: 0.6rem; }
 .pl-setup summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--pl-accent); }
 .pl-setupgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
