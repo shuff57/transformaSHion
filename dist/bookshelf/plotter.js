@@ -536,7 +536,15 @@
       movesBox.hidden = !(S.paper && S.moves.length);
       while (movesList.firstChild) movesList.removeChild(movesList.firstChild);
       S.moves.forEach(function (m) { movesList.appendChild(h("li", null, moveText(m))); });
+      alignSide();
     }
+    /* The drawing keeps a margin M around the grid for the tick numbers, so the visible grid starts below the svg's top edge.
+       Drop the sidebar by that margin (scaled to the rendered size) so its top meets the top of the grid. */
+    function alignSide() {
+      var r = svg.getBoundingClientRect();
+      if (r.width) side.style.marginTop = "calc(0.4rem + " + (M * r.width / W()).toFixed(1) + "px)";
+    }
+    if (window.ResizeObserver) new ResizeObserver(alignSide).observe(svg); else window.addEventListener("resize", alignSide);
     function hintText() {
       switch (S.tool) {
         case "mark": return "Mark on paper: click a grid crossing or a corner to copy it onto the paper. Click a polygon's edge to copy the whole polygon.";

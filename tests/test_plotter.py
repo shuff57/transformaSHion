@@ -595,6 +595,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     assert row.is_visible()                                              # clicking the grid or the page never closes it
     c = pg.evaluate("() => { const r = s => document.querySelector(s).getBoundingClientRect(), g = r('.pl-svg'), b = r('.pl-bar'), root = r('.pl-root'); return [g.left + g.width / 2 - (root.left + root.width / 2), b.left + b.width / 2 - (g.left + g.width / 2)]; }")
     assert abs(c[0]) < 2 and abs(c[1]) < 2                               # the grid is centered in the tool, with the toolbar centered under it
+    top = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-frame').getBoundingClientRect().top")
+    assert abs(top) < 1.5                                                # the sidebar's top edge meets the top edge of the grid
     pg.get_by_role("button", name="Paper", exact=True).click()
     under = pg.evaluate("() => { const g = document.querySelector('.pl-svg').getBoundingClientRect(), p = document.querySelector('.pl-pbar').getBoundingClientRect(); return p.left >= g.left - 1 && p.right <= g.right + 1; }")
     assert under                                                         # the paper tools stay inside the grid's column
