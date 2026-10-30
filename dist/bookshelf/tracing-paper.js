@@ -228,7 +228,7 @@
     // ---- build the static UI once
     var head = el("div", { class: "tp-head" });
     var pin = el("div", { class: "tp-pin" });
-    ui.title = el("h2", { class: "tp-title" });
+    ui.title = el("h" + (opts.headingLevel || 2), { class: "tp-title" });
     ui.note = el("p", { class: "tp-note" });
     ui.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     ui.svg.setAttribute("class", "tp-svg");
@@ -264,7 +264,7 @@
     side.appendChild(tabs);
     [pPaper, pSlide, pTurn, pFlip, pCheck].forEach(function (p) { side.appendChild(p); });
     function group(title, kids, into) {
-      var g = el("section", { class: "tp-group" }, title ? [el("h3", { text: title })] : []);
+      var g = el("section", { class: "tp-group" }, title ? [el("h" + (opts.headingLevel ? opts.headingLevel + 1 : 3), { text: title })] : []);
       kids.forEach(function (k) { g.appendChild(k); });
       (into || side).appendChild(g);
       return g;
@@ -363,7 +363,7 @@
     ui.checkSel = el("select", { class: "tp-sel", "aria-label": "Which move are you predicting" });
     ui.checkIn = el("input", { type: "text", class: "tp-text", placeholder: "(0, 0), (3, 1), (2, 4)", "aria-label": "Your predicted image points" });
     ui.checkMsg = el("p", { class: "tp-checkmsg", role: "status", "aria-live": "polite" });
-    ui.checkBox.appendChild(el("h3", { text: "Check a prediction" }));
+    ui.checkBox.appendChild(el("h" + (opts.headingLevel ? opts.headingLevel + 1 : 3), { text: "Check a prediction" }));
     ui.checkBox.appendChild(el("p", { class: "tp-hint", text: "Predict first, then test it with the paper. Plot one point for each corner of the figure on the grid, or type them." }));
     ui.checkBox.appendChild(ui.checkSel);
     ui.checkBox.appendChild(ui.checkIn);
@@ -765,7 +765,7 @@
         var h = inlineHosts[i];
         if (h.getAttribute("data-tp-mounted")) continue;
         h.setAttribute("data-tp-mounted", "1");
-        window.TracingPaper.mount(h, { presets: presets, preset: h.getAttribute("data-tracing-preset") || undefined });
+        window.TracingPaper.mount(h, { presets: presets, headingLevel: 4, preset: h.getAttribute("data-tracing-preset") || undefined });
       }
       if (config.fab) {                       // a floating button is opt-in: pages with the tool inline do not need one
         var fab = document.createElement("button");

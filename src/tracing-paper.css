@@ -47,7 +47,7 @@
 .tp-tab:focus-visible { outline: 3px solid var(--tp-curve); outline-offset: -2px; }
 .tp-panel { display: flex; flex-direction: column; gap: 0.6rem; }
 .tp-group { background: var(--tp-panel); border: 1px solid var(--tp-line); border-radius: 8px; padding: 0.55rem 0.7rem; }
-.tp-group h3 { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--tp-accent); }
+.tp-group :is(h3, h4, h5) { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--tp-accent); }
 .tp-row { display: flex; flex-wrap: wrap; gap: 0.35rem 0.4rem; align-items: center; margin: 0.25rem 0; }
 .tp-lab { opacity: 0.85; }
 .tp-val { font-weight: 700; }

@@ -26,7 +26,7 @@
         var h = inlineHosts[i];
         if (h.getAttribute("data-tp-mounted")) continue;
         h.setAttribute("data-tp-mounted", "1");
-        window.TracingPaper.mount(h, { presets: presets, preset: h.getAttribute("data-tracing-preset") || undefined });
+        window.TracingPaper.mount(h, { presets: presets, headingLevel: 4, preset: h.getAttribute("data-tracing-preset") || undefined });
       }
       if (config.fab) {                       // a floating button is opt-in: pages with the tool inline do not need one
         var fab = document.createElement("button");

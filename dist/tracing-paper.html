@@ -54,7 +54,7 @@
 .tp-tab:focus-visible { outline: 3px solid var(--tp-curve); outline-offset: -2px; }
 .tp-panel { display: flex; flex-direction: column; gap: 0.6rem; }
 .tp-group { background: var(--tp-panel); border: 1px solid var(--tp-line); border-radius: 8px; padding: 0.55rem 0.7rem; }
-.tp-group h3 { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--tp-accent); }
+.tp-group :is(h3, h4, h5) { margin: 0 0 0.35rem; font-size: 0.95rem; color: var(--tp-accent); }
 .tp-row { display: flex; flex-wrap: wrap; gap: 0.35rem 0.4rem; align-items: center; margin: 0.25rem 0; }
 .tp-lab { opacity: 0.85; }
 .tp-val { font-weight: 700; }
@@ -364,7 +364,7 @@ polyline.tp-mark { fill: none; }
     // ---- build the static UI once
     var head = el("div", { class: "tp-head" });
     var pin = el("div", { class: "tp-pin" });
-    ui.title = el("h2", { class: "tp-title" });
+    ui.title = el("h" + (opts.headingLevel || 2), { class: "tp-title" });
     ui.note = el("p", { class: "tp-note" });
     ui.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     ui.svg.setAttribute("class", "tp-svg");
@@ -400,7 +400,7 @@ polyline.tp-mark { fill: none; }
     side.appendChild(tabs);
     [pPaper, pSlide, pTurn, pFlip, pCheck].forEach(function (p) { side.appendChild(p); });
     function group(title, kids, into) {
-      var g = el("section", { class: "tp-group" }, title ? [el("h3", { text: title })] : []);
+      var g = el("section", { class: "tp-group" }, title ? [el("h" + (opts.headingLevel ? opts.headingLevel + 1 : 3), { text: title })] : []);
       kids.forEach(function (k) { g.appendChild(k); });
       (into || side).appendChild(g);
       return g;
@@ -499,7 +499,7 @@ polyline.tp-mark { fill: none; }
     ui.checkSel = el("select", { class: "tp-sel", "aria-label": "Which move are you predicting" });
     ui.checkIn = el("input", { type: "text", class: "tp-text", placeholder: "(0, 0), (3, 1), (2, 4)", "aria-label": "Your predicted image points" });
     ui.checkMsg = el("p", { class: "tp-checkmsg", role: "status", "aria-live": "polite" });
-    ui.checkBox.appendChild(el("h3", { text: "Check a prediction" }));
+    ui.checkBox.appendChild(el("h" + (opts.headingLevel ? opts.headingLevel + 1 : 3), { text: "Check a prediction" }));
     ui.checkBox.appendChild(el("p", { class: "tp-hint", text: "Predict first, then test it with the paper. Plot one point for each corner of the figure on the grid, or type them." }));
     ui.checkBox.appendChild(ui.checkSel);
     ui.checkBox.appendChild(ui.checkIn);
