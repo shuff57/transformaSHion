@@ -170,7 +170,7 @@
     side.appendChild(cfg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
-    pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the sidebar (wide screens)
+    pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the left sidebar (wide screens)
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
     var ccw = addBtn(pbar, "ccw", "\u21BA 15\u00B0"); ccw.setAttribute("aria-label", "Turn paper 15 degrees counterclockwise");
     var cw = addBtn(pbar, "cw", "\u21BB 15\u00B0"); cw.setAttribute("aria-label", "Turn paper 15 degrees clockwise");
@@ -546,7 +546,10 @@
        Drop the sidebar by that margin (scaled to the rendered size) so its top meets the top of the grid. */
     function alignSide() {
       var r = svg.getBoundingClientRect();
-      if (r.width) side.style.marginTop = left.style.marginTop = "calc(0.4rem + " + (M * r.width / W()).toFixed(1) + "px)";
+      if (!r.width) return;
+      var k = r.width / W();
+      side.style.marginTop = left.style.marginTop = "calc(0.4rem + " + (M * k).toFixed(1) + "px)";
+      left.style.maxHeight = Math.max(0, r.height - 2 * M * k).toFixed(1) + "px";   // the left column is never taller than the visible grid; the Steps card scrolls inside it
     }
     if (window.ResizeObserver) new ResizeObserver(alignSide).observe(svg); else window.addEventListener("resize", alignSide);
     function hintText() {
@@ -658,8 +661,8 @@
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
-    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status, and the paper tools are a card under Settings; narrow: all back under the grid
-      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); side.appendChild(pbar); }
+    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status, and the paper tools are a card above it; narrow: all back under the grid
+      if (wide.matches) { left.appendChild(pbar); left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); }
       else { root_.appendChild(pbar); root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
     }
     dockSteps();

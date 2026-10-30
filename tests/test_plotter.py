@@ -576,7 +576,7 @@ def test_grid_size_can_be_set_and_reset(grid):
 
 
 def test_steps_and_paper_tools_sit_under_the_grid_on_narrow_screens(grid):
-    assert grid.pg.evaluate("() => !document.querySelector('.pl-movesbox').closest('.pl-left') && !document.querySelector('.pl-pbar').closest('.pl-side')")   # narrow: they keep their place under the grid
+    assert grid.pg.evaluate("() => !document.querySelector('.pl-movesbox').closest('.pl-left') && !document.querySelector('.pl-pbar').closest('.pl-left')")   # narrow: they keep their place under the grid
 
 
 def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
@@ -606,8 +606,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     pg.get_by_role("button", name="Paper", exact=True).click()
     guide = pg.evaluate("() => [!!document.querySelector('.pl-hint').closest('.pl-left'), !!document.querySelector('.pl-status').closest('.pl-left')]")
     assert guide == [True, True]                                   # the hint and the status are steps text: they live in the Steps card, not under the grid
-    card = pg.evaluate("() => { const p = document.querySelector('.pl-pbar'), g = document.querySelector('.pl-svg').getBoundingClientRect(), r = p.getBoundingClientRect(), s = document.querySelector('.pl-cfg').getBoundingClientRect(); return [!!p.closest('.pl-side'), r.left >= g.right, r.top >= s.bottom, p.offsetParent !== null, getComputedStyle(p).backgroundColor === getComputedStyle(document.querySelector('.pl-cfg')).backgroundColor]; }")
-    assert card == [True, True, True, True, True]                        # the paper tools are a card in the right sidebar, under Settings (same card background), not under the grid
+    card = pg.evaluate("() => { const p = document.querySelector('.pl-pbar'), g = document.querySelector('.pl-svg').getBoundingClientRect(), r = p.getBoundingClientRect(), s = document.querySelector('.pl-movesbox').getBoundingClientRect(), l = document.querySelector('.pl-left').getBoundingClientRect(), f = document.querySelector('.pl-frame').getBoundingClientRect(); return [!!p.closest('.pl-left'), r.right <= g.left, r.bottom <= s.top + 1, p.offsetParent !== null, Math.abs(r.top - f.top) < 1.5, l.height <= f.height + 2]; }")
+    assert card == [True, True, True, True, True, True]                  # the paper tools are a card in the left sidebar above Steps, level with the top of the grid; the column is no taller than the grid
     pg.close()
 
 
