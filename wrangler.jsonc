@@ -1,0 +1,10 @@
+{
+  "name": "tracing-plotter",
+  "compatibility_date": "2026-09-25",
+  // dist/site is the plotter alone; python3 build.py writes it.
+  "assets": { "directory": "./dist/site" },
+  // Cloudflare creates and manages the DNS record for a Custom Domain.
+  "routes": [{ "pattern": "tracing.lefthanddev.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
+}
