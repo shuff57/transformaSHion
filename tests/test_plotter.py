@@ -575,8 +575,8 @@ def test_grid_size_can_be_set_and_reset(grid):
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
 
 
-def test_steps_sit_under_the_grid_on_narrow_screens(grid):
-    assert grid.pg.evaluate("() => !document.querySelector('.pl-movesbox').closest('.pl-left')")   # narrow: the left sidebar is gone and the steps keep their place under the grid
+def test_steps_and_paper_tools_sit_under_the_grid_on_narrow_screens(grid):
+    assert grid.pg.evaluate("() => !document.querySelector('.pl-movesbox').closest('.pl-left') && !document.querySelector('.pl-pbar').closest('.pl-side')")   # narrow: they keep their place under the grid
 
 
 def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
@@ -597,7 +597,7 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     pg.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     pg.mouse.click(5, 5)
     assert row.is_visible()                                              # clicking the grid or the page never closes it
-    c = pg.evaluate("() => { const r = s => document.querySelector(s).getBoundingClientRect(), g = r('.pl-svg'), b = r('.pl-bar'), root = r('.pl-root'); return [g.left + g.width / 2 - (root.left + root.width / 2), b.left + b.width / 2 - (g.left + g.width / 2)]; }")
+    c = pg.evaluate("() => { const r = s => document.querySelector(s).getBoundingClientRect(), g = r('.pl-svg'), b = r('.pl-bar:not(.pl-pbar)'), root = r('.pl-root'); return [g.left + g.width / 2 - (root.left + root.width / 2), b.left + b.width / 2 - (g.left + g.width / 2)]; }")
     assert abs(c[0]) < 2 and abs(c[1]) < 2                               # the grid is centered in the tool, with the toolbar centered under it
     top = pg.evaluate("() => document.querySelector('.pl-cfg').getBoundingClientRect().top - document.querySelector('.pl-frame').getBoundingClientRect().top")
     assert abs(top) < 1.5                                                # the sidebar's top edge meets the top edge of the grid
@@ -606,8 +606,8 @@ def test_wide_screens_keep_the_settings_panel_out_in_a_sidebar(browser, site):
     pg.get_by_role("button", name="Paper", exact=True).click()
     guide = pg.evaluate("() => [!!document.querySelector('.pl-hint').closest('.pl-left'), !!document.querySelector('.pl-status').closest('.pl-left')]")
     assert guide == [True, True]                                   # the hint and the status are steps text: they live in the Steps card, not under the grid
-    under = pg.evaluate("() => { const g = document.querySelector('.pl-svg').getBoundingClientRect(), p = document.querySelector('.pl-pbar').getBoundingClientRect(); return p.left >= g.left - 1 && p.right <= g.right + 1; }")
-    assert under                                                         # the paper tools stay inside the grid's column
+    card = pg.evaluate("() => { const p = document.querySelector('.pl-pbar'), g = document.querySelector('.pl-svg').getBoundingClientRect(), r = p.getBoundingClientRect(), s = document.querySelector('.pl-cfg').getBoundingClientRect(); return [!!p.closest('.pl-side'), r.left >= g.right, r.top >= s.bottom, p.offsetParent !== null, getComputedStyle(p).backgroundColor === getComputedStyle(document.querySelector('.pl-cfg')).backgroundColor]; }")
+    assert card == [True, True, True, True, True]                        # the paper tools are a card in the right sidebar, under Settings (same card background), not under the grid
     pg.close()
 
 

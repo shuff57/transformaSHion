@@ -74,6 +74,10 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   .pl-left .pl-movesh { margin: 0; font-size: inherit; font-weight: 700; opacity: 1; }
   .pl-left .pl-moves { margin: 0; padding-left: 1.3rem; font-size: inherit; }
   .pl-left .pl-hint, .pl-left .pl-status { margin: 0; font-size: 0.85rem; }
+  /* The paper tools are a card in the right sidebar, under Settings (its height does not change, so the buttons stay put). */
+  .pl-side .pl-pbar { box-sizing: border-box; width: 17rem; max-width: 100%; margin: 0; padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink);
+    border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
+  .pl-side .pl-pbartitle { display: block; flex: 0 0 100%; margin: 0; font-weight: 700; }
   .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
@@ -103,6 +107,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-movesempty { margin: 0; font-size: 0.85rem; }
 .pl-movesempty[hidden] { display: none; }
 .pl-left:empty { display: none; }
+.pl-pbartitle { display: none; }
 .pl-setup { margin-top: 0.6rem; }
 .pl-setup summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--pl-accent); }
 .pl-setupgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
@@ -353,6 +358,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     side.appendChild(cfg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
+    pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the sidebar (wide screens)
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
     var ccw = addBtn(pbar, "ccw", "\u21BA 15\u00B0"); ccw.setAttribute("aria-label", "Turn paper 15 degrees counterclockwise");
     var cw = addBtn(pbar, "cw", "\u21BB 15\u00B0"); cw.setAttribute("aria-label", "Turn paper 15 degrees clockwise");
@@ -840,9 +846,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
-    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status; narrow: back under the grid
-      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); }
-      else { root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
+    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status, and the paper tools are a card under Settings; narrow: all back under the grid
+      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); side.appendChild(pbar); }
+      else { root_.appendChild(pbar); root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
     }
     dockSteps();
     if (wide.addEventListener) wide.addEventListener("change", dockSteps);

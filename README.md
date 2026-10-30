@@ -74,6 +74,13 @@ data-plotter-preset="parallel">` builds the grid in place and `[label](#plotter:
 `tests/test_plotter.py` (drives Chromium). The tracing paper above is kept for its setups, which carry their own
 shapes, mirrors and checks.
 
+## Motion studies
+
+`motion/` holds three standalone animated SVGs of the wordmark. In each, the SH slides out, turns, flips,
+and settles back into the name. Open `motion/index.html` for the preview sheet. Every file is
+self-contained, follows light and dark (except the dark diagram), and shows the still wordmark under
+`prefers-reduced-motion`.
+
 ## Files
 
 | | |
@@ -83,6 +90,7 @@ shapes, mirrors and checks.
 | `src/presets.js` | example setups |
 | `src/plotter.js`, `src/plotter.css` | the plotter (self-contained: presets, mount, plugin wrapper) |
 | `src/bookshelf-plugin.js` | wrapper for the bookSHelf page-plugin loader (not needed elsewhere) |
+| `motion/` | three standalone animated wordmarks and their preview sheet |
 | `build.py` | writes `dist/` |
 | `tests/test_tracing_paper.py` | drives the real UI in Chromium and checks every readout |
 

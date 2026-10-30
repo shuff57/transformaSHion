@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="mv-title mv-desc">
-  <title id="mv-title">transformaSHion — slide, turn, flip</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="460" viewBox="0 0 1400 460" role="img" aria-labelledby="mv-title mv-desc">
+  <title id="mv-title">transformaSHion: slide, turn, flip</title>
   <desc id="mv-desc">On a dark graph grid, the letters SH lift out of the word and slide up to the right along a drawn arrow, turn half around inside a drawn arc, flip over a dashed mirror line, then slide home and flip face up into place. A caption names each move as it happens.</desc>
 
   <style>
@@ -10,7 +10,6 @@
       --muted: #a3a199;
       --accent: #e0a96d;
       --bg: #26241d;
-      --line: #55524a;
       --grid: rgba(250, 249, 245, 0.065);
       font-family: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
       text-rendering: geometricPrecision;
@@ -24,8 +23,8 @@
     .sh-word { fill: var(--accent); }
     .ghost { fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-dasharray: 9 7; stroke-linejoin: round; opacity: 0; animation: ghost var(--loop) linear infinite; }
     @keyframes ghost {
-      0%, 6%    { opacity: 0; }
-      10%, 62%  { opacity: 0.45; }
+      0%, 7%    { opacity: 0; }
+      12%, 62%  { opacity: 0.45; }
       70%, 100% { opacity: 0; }
     }
     .rule { fill: var(--accent); opacity: 0.85; }
@@ -33,10 +32,10 @@
     .sh-move { transform-box: fill-box; transform-origin: 50% 50%; animation: sh-move var(--loop) infinite; }
     @keyframes sh-move {
       0%, 7%   { transform: translate(0, 0) rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1); }
-      20%      { transform: translate(140px, -64px) rotate(0deg); animation-timing-function: linear; }
-      23%      { transform: translate(140px, -64px) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
-      37%      { transform: translate(140px, -64px) rotate(180deg); animation-timing-function: linear; }
-      47%      { transform: translate(140px, -64px) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
+      20%      { transform: translate(180px, -175px) rotate(0deg); animation-timing-function: linear; }
+      23%      { transform: translate(180px, -175px) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+      37%      { transform: translate(180px, -175px) rotate(180deg); animation-timing-function: linear; }
+      47%      { transform: translate(180px, -175px) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
       66%      { transform: translate(0, 0) rotate(360deg); animation-timing-function: linear; }
       100%     { transform: translate(0, 0) rotate(360deg); }
     }
@@ -54,7 +53,7 @@
       73%, 100% { fill-opacity: 1; stroke-opacity: 0; }
     }
 
-    /* The three annotations draw themselves, then leave before the next beat. */
+    /* The three annotations draw themselves above the word, then leave before the next beat. */
     .ann-slide, .ann-turn, .ann-flip { opacity: 0; }
     .ann-slide { animation: ann-slide var(--loop) linear infinite; }
     .ann-turn  { animation: ann-turn var(--loop) linear infinite; }
@@ -74,11 +73,16 @@
       39%, 50%  { opacity: 0.9; }
       56%, 100% { opacity: 0; }
     }
-    .slide-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 160; stroke-dashoffset: 160; animation: draw-slide var(--loop) linear infinite; }
+    .slide-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 350; stroke-dashoffset: 350; animation: draw-slide var(--loop) linear infinite; }
     @keyframes draw-slide {
-      0%, 8%    { stroke-dashoffset: 160; }
+      0%, 8%    { stroke-dashoffset: 350; }
       19%, 100% { stroke-dashoffset: 0; }
     }
+    .slide-head, .turn-head { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+    .slide-head { animation: head-slide var(--loop) linear infinite; }
+    .turn-head  { animation: head-turn var(--loop) linear infinite; }
+    @keyframes head-slide { 0%, 16% { opacity: 0; } 19%, 100% { opacity: 1; } }
+    @keyframes head-turn  { 0%, 33% { opacity: 0; } 36%, 100% { opacity: 1; } }
     .turn-arc { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 330; stroke-dashoffset: 330; animation: draw-turn var(--loop) linear infinite; }
     @keyframes draw-turn {
       0%, 23%   { stroke-dashoffset: 330; }
@@ -119,34 +123,39 @@
     <pattern id="mv-grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 H 0 V 40" fill="none"/>
     </pattern>
-    <marker id="mv-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M 1 1 L 10 6 L 1 11" fill="none" stroke="#e0a96d" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
   </defs>
 
-  <rect class="bg" width="1200" height="320"/>
-  <rect class="grid" width="1200" height="320"/>
+  <rect class="bg" width="1400" height="460"/>
+  <rect class="grid" width="1400" height="460"/>
 
   <g aria-hidden="true">
-    <path class="slide-line" d="M 829 171 L 960 110" marker-end="url(#mv-arrow)"/>
-    <path class="turn-arc" d="M 864 107 A 105 105 0 0 0 1074 107" marker-end="url(#mv-arrow)"/>
-    <line class="mirror" x1="969" y1="36" x2="969" y2="274"/>
-  </g>
-
-  <text class="word" x="83.5" y="225" textLength="649.7" lengthAdjust="spacing">transforma</text>
-  <text class="word" x="924.9" y="225" textLength="191.7" lengthAdjust="spacing">ion</text>
-  <text class="ghost" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
-  <rect class="rule" x="754" y="238" width="150" height="3" rx="1.5"/>
-  <rect class="pulse" x="729" y="110" width="200" height="128" rx="6"/>
-
-  <g class="sh-move">
-    <g class="sh-flip">
-      <text class="word sh-word sh-ink" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+    <g class="ann-slide">
+      <path class="slide-line" d="M 929 348 L 1178 105"/>
+      <path class="slide-head" d="M 1159.5 111.9 L 1178 105 L 1170.7 123.3"/>
+    </g>
+    <g class="ann-turn">
+      <path class="turn-arc" d="M 1004 173 A 105 105 0 0 0 1214 173"/>
+      <path class="turn-head" d="M 1204 189 L 1214 173 L 1224 189"/>
+    </g>
+    <g class="ann-flip">
+      <line class="mirror" x1="1109" y1="48" x2="1109" y2="288"/>
     </g>
   </g>
 
-  <text class="cap cap-slide" x="600" y="298">slide</text>
-  <text class="cap cap-turn" x="600" y="298">turn</text>
-  <text class="cap cap-flip" x="600" y="298">flip</text>
-  <text class="cap cap-home" x="600" y="298">in place</text>
+  <text class="word" x="183.5" y="400" textLength="649.7" lengthAdjust="spacing">transforma</text>
+  <text class="word" x="1024.9" y="400" textLength="191.7" lengthAdjust="spacing">ion</text>
+  <text class="ghost" x="833.2" y="400" textLength="191.7" lengthAdjust="spacing">SH</text>
+  <rect class="rule" x="854" y="413" width="150" height="3" rx="1.5"/>
+  <rect class="pulse" x="825" y="285" width="208" height="128" rx="6"/>
+
+  <g class="sh-move">
+    <g class="sh-flip">
+      <text class="word sh-word sh-ink" x="833.2" y="400" textLength="191.7" lengthAdjust="spacing">SH</text>
+    </g>
+  </g>
+
+  <text class="cap cap-slide" x="700" y="444">slide</text>
+  <text class="cap cap-turn" x="700" y="444">turn</text>
+  <text class="cap cap-flip" x="700" y="444">flip</text>
+  <text class="cap cap-home" x="700" y="444">in place</text>
 </svg>

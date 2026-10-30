@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="tp-title tp-desc">
-  <title id="tp-title">transformaSHion — tracing-paper motion</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="460" viewBox="0 0 1400 460" role="img" aria-labelledby="tp-title tp-desc">
+  <title id="tp-title">transformaSHion: tracing-paper motion</title>
   <desc id="tp-desc">The letters S and H lift off a sheet of tracing paper on a pale graph grid. They slide up and to the right, turn half around, flip face down to show the paper's blue hatched back, slide back into the word, and flip face up into place.</desc>
 
   <style>
@@ -40,8 +40,8 @@
     /* The gap keeps the word readable while the SH is away. */
     .ghost { opacity: 0; animation: ghost var(--loop) linear infinite; }
     @keyframes ghost {
-      0%, 6%    { opacity: 0; }
-      10%, 62%  { opacity: 0.55; }
+      0%, 7%    { opacity: 0; }
+      12%, 62%  { opacity: 0.55; }
       70%, 100% { opacity: 0; }
     }
 
@@ -49,10 +49,10 @@
     .sh-move { transform-box: fill-box; transform-origin: 50% 50%; animation: sh-move var(--loop) infinite; }
     @keyframes sh-move {
       0%, 7%   { transform: translate(0, 0) rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1); }
-      20%      { transform: translate(140px, -64px) rotate(0deg); animation-timing-function: linear; }
-      23%      { transform: translate(140px, -64px) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
-      37%      { transform: translate(140px, -64px) rotate(180deg); animation-timing-function: linear; }
-      47%      { transform: translate(140px, -64px) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
+      20%      { transform: translate(180px, -175px) rotate(0deg); animation-timing-function: linear; }
+      23%      { transform: translate(180px, -175px) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+      37%      { transform: translate(180px, -175px) rotate(180deg); animation-timing-function: linear; }
+      47%      { transform: translate(180px, -175px) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
       66%      { transform: translate(0, 0) rotate(360deg); animation-timing-function: linear; }
       100%     { transform: translate(0, 0) rotate(360deg); }
     }
@@ -60,8 +60,8 @@
     /* Beat 3 + 6: flip face down at the staging spot, then flip face up once home. */
     .sh-flip { transform-box: fill-box; transform-origin: 50% 50%; animation: sh-flip var(--loop) infinite; }
     @keyframes sh-flip {
-      0%, 37%  { transform: scaleX(1); animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1); }
-      47%, 66% { transform: scaleX(-1); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+      0%, 37%   { transform: scaleX(1); animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1); }
+      47%, 66%  { transform: scaleX(-1); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
       76%, 100% { transform: scaleX(1); }
     }
 
@@ -69,8 +69,8 @@
     .paper { opacity: 0; filter: url(#tp-shadow); animation: paper-in var(--loop) linear infinite; }
     @keyframes paper-in {
       0%, 9%    { opacity: 0; }
-      15%, 63%  { opacity: 1; }
-      72%, 100% { opacity: 0; }
+      15%, 47%  { opacity: 1; }
+      58%, 100% { opacity: 0; }
     }
     .paper-face { fill: var(--paper); stroke: var(--line); stroke-width: 1.2; }
     .paper-back, .paper-hatch { opacity: 0; animation: paper-back var(--loop) linear infinite; }
@@ -78,10 +78,17 @@
     .paper-hatch { fill: url(#tp-hatch); }
     @keyframes paper-back {
       0%, 40%   { opacity: 0; }
-      44%, 68%  { opacity: 1; }
-      73%, 100% { opacity: 0; }
+      44%, 100% { opacity: 1; }
     }
     .dogear { fill: var(--accent); opacity: 0.8; }
+
+    /* Seen through the back of the paper: the letters sit back while it is face down. */
+    .sh-glyph { animation: glyph-depth var(--loop) linear infinite; }
+    @keyframes glyph-depth {
+      0%, 40%   { fill-opacity: 1; }
+      44%, 58%  { fill-opacity: 0.55; }
+      68%, 100% { fill-opacity: 1; }
+    }
 
     /* Landing: one soft ring, then quiet. */
     .pulse { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; animation: pulse var(--loop) cubic-bezier(0.2, 0.6, 0.2, 1) infinite; }
@@ -109,29 +116,29 @@
     </filter>
   </defs>
 
-  <rect class="bg" width="1200" height="320"/>
-  <rect class="grid" width="1200" height="320"/>
+  <rect class="bg" width="1400" height="460"/>
+  <rect class="grid" width="1400" height="460"/>
 
   <!-- The word, split so the SH can leave without disturbing its neighbours. -->
-  <text class="word" x="83.5" y="225" textLength="649.7" lengthAdjust="spacing">transforma</text>
-  <text class="word" x="924.9" y="225" textLength="191.7" lengthAdjust="spacing">ion</text>
+  <text class="word" x="183.5" y="400" textLength="649.7" lengthAdjust="spacing">transforma</text>
+  <text class="word" x="1024.9" y="400" textLength="191.7" lengthAdjust="spacing">ion</text>
 
   <!-- Its empty place, drawn while it is away. -->
-  <text class="ghost" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+  <text class="ghost" x="833.2" y="400" textLength="191.7" lengthAdjust="spacing">SH</text>
 
   <!-- A permanent accent rule under the SH: the wordmark's resting mark. -->
-  <rect class="rule" x="754" y="238" width="150" height="4" rx="2"/>
-  <rect class="pulse" x="729" y="110" width="200" height="128" rx="6"/>
+  <rect class="rule" x="854" y="413" width="150" height="4" rx="2"/>
+  <rect class="pulse" x="825" y="285" width="208" height="128" rx="6"/>
 
   <g class="sh-move">
     <g class="sh-flip">
       <g class="paper">
-        <rect class="paper-face" x="699" y="70" width="260" height="200" rx="8"/>
-        <rect class="paper-back" x="699" y="70" width="260" height="200" rx="8"/>
-        <rect class="paper-hatch" x="699" y="70" width="260" height="200" rx="8"/>
-        <path class="dogear" d="M 933 70 H 959 V 96 Z"/>
+        <rect class="paper-face" x="799" y="248" width="260" height="200" rx="8"/>
+        <rect class="paper-back" x="799" y="248" width="260" height="200" rx="8"/>
+        <rect class="paper-hatch" x="799" y="248" width="260" height="200" rx="8"/>
+        <path class="dogear" d="M 1033 248 H 1059 V 274 Z"/>
       </g>
-      <text class="word" x="733.2" y="225" textLength="191.7" lengthAdjust="spacing">SH</text>
+      <text class="word sh-glyph" x="833.2" y="400" textLength="191.7" lengthAdjust="spacing">SH</text>
     </g>
   </g>
 </svg>

@@ -170,6 +170,7 @@
     side.appendChild(cfg);
 
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools", hidden: "" });
+    pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the sidebar (wide screens)
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
     var ccw = addBtn(pbar, "ccw", "\u21BA 15\u00B0"); ccw.setAttribute("aria-label", "Turn paper 15 degrees counterclockwise");
     var cw = addBtn(pbar, "cw", "\u21BB 15\u00B0"); cw.setAttribute("aria-label", "Turn paper 15 degrees clockwise");
@@ -657,9 +658,9 @@
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
     var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
-    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status; narrow: back under the grid
-      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); }
-      else { root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
+    function dockSteps() {                                       // wide: the Steps card in the left sidebar holds the hint, the moves and the status, and the paper tools are a card under Settings; narrow: all back under the grid
+      if (wide.matches) { left.appendChild(movesBox); movesBox.insertBefore(hint, movesEmpty); movesBox.appendChild(status); side.appendChild(pbar); }
+      else { root_.appendChild(pbar); root_.appendChild(hint); root_.appendChild(status); root_.appendChild(movesBox); }
     }
     dockSteps();
     if (wide.addEventListener) wide.addEventListener("change", dockSteps);

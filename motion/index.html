@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>transformaSHion motion studies</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f3ea;
+    --ink: #141413;
+    --muted: #504e49;
+    --line: #cfcabd;
+    --accent: #b3520f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #26241d; --ink: #faf9f5; --muted: #a3a199; --line: #55524a; --accent: #e0a96d; }
+  }
+
+  html { background: var(--bg); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.55 ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 80rem; margin: 0 auto; padding: clamp(1rem, 4vw, 3rem); }
+  a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 0.18em; }
+  a:hover { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  .kicker {
+    margin: 0 0 1.1rem;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    margin: 0 0 1.1rem;
+    max-width: 44rem;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    font-weight: 400;
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+  }
+  h1 em { font-style: italic; }
+  .lede { margin: 0; max-width: 40rem; font-size: clamp(1rem, 1.6vw, 1.14rem); color: var(--muted); }
+
+  .beats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+    margin: 2.4rem 0 0;
+    padding: 0.85rem 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .beats li { display: flex; align-items: center; gap: 0.9rem; }
+  .beats li + li::before { content: "\2192"; color: var(--accent); letter-spacing: 0; }
+
+  .study {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+    margin-top: 2.6rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 55rem) {
+    .study { grid-template-columns: 14rem minmax(0, 1fr); column-gap: 2.5rem; align-items: start; }
+  }
+  .study h2 { margin: 0 0 0.45rem; font-size: 1.45rem; font-weight: 400; letter-spacing: -0.01em; }
+  .study p { margin: 0; }
+  .study .note { max-width: 26ch; font-size: 0.95rem; line-height: 1.5; color: var(--muted); }
+  .study figure { margin: 0; min-width: 0; }
+  .study img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.4rem 1.4rem;
+    margin-top: 0.65rem;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .meta a { text-decoration: none; border-bottom: 1px solid var(--accent); padding-bottom: 0.1em; }
+
+  footer {
+    max-width: 66ch;
+    margin-top: 3.5rem;
+    padding: 1.3rem 0 5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  footer p { margin: 0 0 0.6rem; }
+  code { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.88em; color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Motion studies</p>
+    <h1>The SH leaves <em>home</em>.</h1>
+    <p class="lede">Three looping treatments of the transformaSHion wordmark. The SH slides out, turns, flips, and settles back into the name.</p>
+  </header>
+
+  <ol class="beats" aria-label="The shared storyboard">
+    <li>slide</li>
+    <li>turn</li>
+    <li>flip</li>
+    <li>home</li>
+  </ol>
+
+  <section class="study" aria-labelledby="paper">
+    <div>
+      <h2 id="paper">Tracing paper</h2>
+      <p class="note">A sheet of tracing paper carries the SH out. The grid stays behind, and its empty place is drawn in dashes.</p>
+    </div>
+    <figure>
+      <img src="transformashion-paper.svg" width="1400" height="460" decoding="async" alt="The letters SH lift off the word on a sheet of tracing paper, turn, flip to their blue hatched back, and slide home face up.">
+      <p class="meta"><span>Loop 7.2s, 1400 × 460. Follows the page theme.</span><a href="transformashion-paper.svg">Open SVG</a></p>
+    </figure>
+  </section>
+
+  <section class="study" aria-labelledby="moves">
+    <div>
+      <h2 id="moves">Moves, drawn</h2>
+      <p class="note">The three moves are annotated as they happen: a slide vector, a turn arc and a mirror line, with a caption naming each one.</p>
+    </div>
+    <figure>
+      <img src="transformashion-moves.svg" width="1400" height="460" decoding="async" alt="On a dark grid, the letters SH slide along a drawn arrow, turn inside a drawn arc, and flip over a dashed mirror line, then return.">
+      <p class="meta"><span>Loop 7.2s, 1400 × 460. Dark by design.</span><a href="transformashion-moves.svg">Open SVG</a></p>
+    </figure>
+  </section>
+
+  <section class="study" aria-labelledby="shadow">
+    <div>
+      <h2 id="shadow">Shadow and echo</h2>
+      <p class="note">No paper, no labels. A cast shadow and two trailing copies carry the same move, and an accent rule draws itself on landing.</p>
+    </div>
+    <figure>
+      <img src="transformashion-shadow.svg" width="1400" height="460" decoding="async" alt="The letters SH lift off the word with a soft shadow and two faint copies trailing behind, turn, flip into an outline, and return as a rule draws beneath them.">
+      <p class="meta"><span>Loop 7.2s, 1400 × 460. Follows the page theme.</span><a href="transformashion-shadow.svg">Open SVG</a></p>
+    </figure>
+  </section>
+
+  <footer>
+    <p>Each file in <code>motion/</code> is self-contained: open it directly, or reference it with an <code>&lt;img&gt;</code> tag. To inherit a page's CSS, inline the SVG instead.</p>
+    <p>All three share the same 7.2 second loop and fall back to the still wordmark under <code>prefers-reduced-motion</code>. The two light studies follow the system color scheme; the diagram stays dark.</p>
+  </footer>
+</main>
+</body>
+</html>
