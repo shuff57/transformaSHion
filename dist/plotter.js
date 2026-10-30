@@ -193,6 +193,11 @@
     }
     function X(x) { return M + (x - S.xr[0]) * U; }
     function Y(y) { return M + (S.yr[1] - y) * U; }
+    /* Tick numbers scale with the unit, because the corner is the constraint: the y "-1"
+       ends 3 units left of the axis and the x "-1" is centred one unit left of it, so
+       "−1" must be narrower than (U-3)/1.5 units to clear it. At U=16 a 13px label is
+       3 units too wide and the pair overlapped on IM1 3.1; 10px clears it. */
+    function tickFs() { return Math.max(8, Math.min(13, (U - 3) / 1.3)); }
     function W() { return M * 2 + (S.xr[1] - S.xr[0]) * U; }
     function Hh() { return M * 2 + (S.yr[1] - S.yr[0]) * U; }
     function snapV(v, lo, hi) {
@@ -426,19 +431,24 @@
       var sx = U >= 16 ? 1 : U >= 9 ? 2 : 5, sy = sx, tx;
       for (v = Math.ceil(x0); v <= x1; v++) s("line", { class: "pl-tickmark", x1: X(v), y1: Y(ay) - 4, x2: X(v), y2: Y(ay) + 4 }, g);
       for (v = Math.ceil(y0); v <= y1; v++) s("line", { class: "pl-tickmark", x1: X(ax) - 4, y1: Y(v), x2: X(ax) + 4, y2: Y(v) }, g);
+      /* Number placement, measured at the origin corner. The origin "0" sits in the
+         y-label row hugged against the axis, and the x labels drop one row below the
+         tick marks: at 13px the old "0" (18 below the axis) and the y "-1" (6 below
+         its own gridline) were only 7 units apart and their glyphs overlapped. */
       for (v = Math.ceil(x0); v <= x1; v++) {
         if (v % sx !== 0) continue;
-        if (v === 0 && ax === 0 && ay === 0) tx = s("text", { class: "pl-tick", x: X(0) - 6, y: Y(ay) + 18, "text-anchor": "end" }, g);
-        else if (v === 0) tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 18, "text-anchor": "middle" }, g);
-        else tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 18, "text-anchor": "middle" }, g);
+        var tstyle = "font-size:" + tickFs().toFixed(1) + "px";
+        if (v === 0 && ax === 0 && ay === 0) tx = s("text", { class: "pl-tick", x: X(0) - 3, y: Y(ay) + 6, "text-anchor": "end", style: tstyle }, g);
+        else if (v === 0) tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 22, "text-anchor": "middle", style: tstyle }, g);
+        else tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 22, "text-anchor": "middle", style: tstyle }, g);
         tx.textContent = v;
       }
       for (v = Math.ceil(y0); v <= y1; v++) {
         if (v % sy !== 0 || (v === 0 && ax === 0 && ay === 0)) continue;
-        s("text", { class: "pl-tick", x: X(ax) - 6, y: Y(v) + 6, "text-anchor": "end" }, g).textContent = v;
+        s("text", { class: "pl-tick", x: X(ax) - 3, y: Y(v) + 6, "text-anchor": "end", style: "font-size:" + tickFs().toFixed(1) + "px" }, g).textContent = v;
       }
-      s("text", { class: "pl-axl", x: X(x1) - 2, y: Y(ay) - 6, "text-anchor": "end" }, g).textContent = "x";
-      s("text", { class: "pl-axl", x: X(ax) + 7, y: Y(y1) + 12 }, g).textContent = "y";
+      s("text", { class: "pl-axl", x: X(x1) - 2, y: Y(ay) - 6, "text-anchor": "end", style: "font-size:" + (tickFs() + 2).toFixed(1) + "px" }, g).textContent = "x";
+      s("text", { class: "pl-axl", x: X(ax) + 7, y: Y(y1) + 12, style: "font-size:" + (tickFs() + 2).toFixed(1) + "px" }, g).textContent = "y";
 
       /* things the student drew */
       var gi = s("g", { class: "pl-items", "clip-path": "url(#" + cid + ")" }, svg);

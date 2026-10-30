@@ -7,19 +7,22 @@
 <link rel="stylesheet" href="src/plotter.css">
 <style>
   :root { color-scheme: light dark; }
-  body { margin: 0; padding: 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
+  body { margin: 0; padding: 0.75rem 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: #26241d; color: #faf9f5; } }
   [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
   main { max-width: 60rem; margin: 0 auto; }
   h1 { margin: 0 0 0.2rem; }
-  .lede { margin: 0 0 1rem; font-style: italic; }
+  .lede { margin: 0 0 0.6rem; font-style: italic; }
+  /* The grid is square, so its width is also its height: cap it by the viewport
+     height and the title, grid and toolbar fit one screen without scrolling. */
+  #app { max-width: min(60rem, calc(100vh - 13rem)); margin: 0.4rem auto 0; }
 </style>
 </head>
 <body>
 <main>
   <h1>Plotter</h1>
   <p class="lede">A plain graphing grid. Plot a figure with the Line, Dot and Polygon tools, then turn on the paper, mark points on it, and slide, turn or flip it. The tool never says which move is right.</p>
-  <div id="app"></div>
+  <div id="app" class="pl-bare"></div>
 </main>
 <script src="src/plotter.js"></script>
 <script>

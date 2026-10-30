@@ -11,6 +11,8 @@
   dist/plotter.html              the plotter (plain graphing grid with an optional paper) as one self-contained file
   dist/plotter.js, .css          the plotter for embedding; dist/bookshelf/plotter.js, .css is the same pair for the
                                  bookSHelf plugin loader (plotter.js carries its own presets and plugin wrapper)
+  dist/index.html                the plotter page as the site root
+  dist/site/index.html           the plotter alone: the directory to deploy (e.g. Cloudflare Pages)
 """
 import pathlib
 
@@ -49,6 +51,9 @@ def build_plotter():
     page = page.replace('<script src="src/plotter.js"></script>', "<script>\n" + js + "</script>")
     assert 'src="src/' not in page and 'href="src/' not in page, "a src/ reference survived (plotter)"
     (DIST / "plotter.html").write_text(page, encoding="utf-8")
+    (DIST / "index.html").write_text(page, encoding="utf-8")
+    (DIST / "site").mkdir(exist_ok=True)
+    (DIST / "site" / "index.html").write_text(page, encoding="utf-8")
 
 
 def read_index():

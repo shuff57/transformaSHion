@@ -16,6 +16,32 @@
 
 .pl-root { margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--pl-line); border-radius: 12px; background: var(--pl-bg); color: var(--pl-ink);
   font: 15px/1.4 ui-serif, Georgia, "Times New Roman", serif; box-sizing: border-box; max-width: 100%; min-width: 0; }
+
+/* Bare (opt-in, class `pl-bare` on the .pl-inline div): the grid sits on the page
+   with no panel around it — no title, no note, no border or tinted card. The
+   section's own steps already say what to plot. The svg keeps its aria-label, so
+   hiding the visible title costs nothing to a screen reader. */
+/* The plugin adds `pl-root` to the very div the author marked, so the root rule
+   matches the same element (no descendant combinator) while the title and note
+   are its children. */
+.pl-bare.pl-root { border: 0; background: transparent; padding: 0; margin: 0.5rem 0 0; }
+.pl-bare .pl-title, .pl-bare .pl-note { display: none; }
+.pl-bare .pl-svg { border: 0; background: transparent; }
+.pl-bare .pl-frame { stroke: none; }
+
+/* Steps beside the grid (opt-in, class `pl-beside` on the .pl-inline div).
+   The numbered list that immediately precedes the grid floats left and the grid
+   takes the rest of the row, so steps and grid share one screen instead of the
+   grid pushing the block 1200px tall. `flow-root` keeps the grid's toolbar and
+   menu inside a block that sits beside the float instead of sliding under it.
+   One column from 900px down, where the grid is already phone-sized. */
+.pl-beside { display: flow-root; }
+.pl-beside .pl-root { max-width: 520px; }
+ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
+.pl-beside + * { clear: both; }
+@media (max-width: 900px) {
+  ol:has(+ .pl-beside) { float: none; width: auto; margin: 0 0 0.75rem; }
+}
 .pl-root *, .pl-overlay * { box-sizing: border-box; }
 .pl-title { margin: 0 0 0.25rem; font-size: 1.1rem; color: var(--pl-ink); }
 .pl-note { margin: 0 0 0.6rem; font-style: italic; }
@@ -57,8 +83,12 @@
 .pl-tickmark { stroke: var(--pl-ink); stroke-width: 1.5; }
 .pl-anchor { fill: var(--pl-accent); stroke: var(--pl-bg); stroke-width: 1.5; }
 .pl-anchor.pl-pend { stroke: var(--pl-ink); }
-.pl-tick { fill: var(--pl-ink); opacity: 0.8; font: 17px ui-serif, Georgia, serif; }
-.pl-axl { fill: var(--pl-ink); font: italic 18px ui-serif, Georgia, serif; }
+/* 13px, not 17: at the blank preset's unit (about 19 viewBox px) a 17px "-1"
+   is 17px wide and collides with the origin "0" sitting just below it. Measured
+   on IM1 3.2 at 1400px; 13px clears the gap and keeps the numbers reading as
+   background labels. */
+.pl-tick { fill: var(--pl-ink); opacity: 0.8; font: 13px ui-serif, Georgia, serif; }
+.pl-axl { fill: var(--pl-ink); font: italic 15px ui-serif, Georgia, serif; }
 .pl-shape { stroke: var(--pl-curve); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; fill: none; }
 .pl-fill { fill: var(--pl-curve); fill-opacity: 0.18; }
 .pl-dot { fill: var(--pl-curve); stroke: var(--pl-bg); stroke-width: 1.5; }

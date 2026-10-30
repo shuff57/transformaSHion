@@ -23,6 +23,32 @@
 
 .pl-root { margin: 1.5rem 0; padding: 0.75rem; border: 1px solid var(--pl-line); border-radius: 12px; background: var(--pl-bg); color: var(--pl-ink);
   font: 15px/1.4 ui-serif, Georgia, "Times New Roman", serif; box-sizing: border-box; max-width: 100%; min-width: 0; }
+
+/* Bare (opt-in, class `pl-bare` on the .pl-inline div): the grid sits on the page
+   with no panel around it — no title, no note, no border or tinted card. The
+   section's own steps already say what to plot. The svg keeps its aria-label, so
+   hiding the visible title costs nothing to a screen reader. */
+/* The plugin adds `pl-root` to the very div the author marked, so the root rule
+   matches the same element (no descendant combinator) while the title and note
+   are its children. */
+.pl-bare.pl-root { border: 0; background: transparent; padding: 0; margin: 0.5rem 0 0; }
+.pl-bare .pl-title, .pl-bare .pl-note { display: none; }
+.pl-bare .pl-svg { border: 0; background: transparent; }
+.pl-bare .pl-frame { stroke: none; }
+
+/* Steps beside the grid (opt-in, class `pl-beside` on the .pl-inline div).
+   The numbered list that immediately precedes the grid floats left and the grid
+   takes the rest of the row, so steps and grid share one screen instead of the
+   grid pushing the block 1200px tall. `flow-root` keeps the grid's toolbar and
+   menu inside a block that sits beside the float instead of sliding under it.
+   One column from 900px down, where the grid is already phone-sized. */
+.pl-beside { display: flow-root; }
+.pl-beside .pl-root { max-width: 520px; }
+ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
+.pl-beside + * { clear: both; }
+@media (max-width: 900px) {
+  ol:has(+ .pl-beside) { float: none; width: auto; margin: 0 0 0.75rem; }
+}
 .pl-root *, .pl-overlay * { box-sizing: border-box; }
 .pl-title { margin: 0 0 0.25rem; font-size: 1.1rem; color: var(--pl-ink); }
 .pl-note { margin: 0 0 0.6rem; font-style: italic; }
@@ -64,8 +90,12 @@
 .pl-tickmark { stroke: var(--pl-ink); stroke-width: 1.5; }
 .pl-anchor { fill: var(--pl-accent); stroke: var(--pl-bg); stroke-width: 1.5; }
 .pl-anchor.pl-pend { stroke: var(--pl-ink); }
-.pl-tick { fill: var(--pl-ink); opacity: 0.8; font: 17px ui-serif, Georgia, serif; }
-.pl-axl { fill: var(--pl-ink); font: italic 18px ui-serif, Georgia, serif; }
+/* 13px, not 17: at the blank preset's unit (about 19 viewBox px) a 17px "-1"
+   is 17px wide and collides with the origin "0" sitting just below it. Measured
+   on IM1 3.2 at 1400px; 13px clears the gap and keeps the numbers reading as
+   background labels. */
+.pl-tick { fill: var(--pl-ink); opacity: 0.8; font: 13px ui-serif, Georgia, serif; }
+.pl-axl { fill: var(--pl-ink); font: italic 15px ui-serif, Georgia, serif; }
 .pl-shape { stroke: var(--pl-curve); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; fill: none; }
 .pl-fill { fill: var(--pl-curve); fill-opacity: 0.18; }
 .pl-dot { fill: var(--pl-curve); stroke: var(--pl-bg); stroke-width: 1.5; }
@@ -103,19 +133,22 @@
 </style>
 <style>
   :root { color-scheme: light dark; }
-  body { margin: 0; padding: 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
+  body { margin: 0; padding: 0.75rem 1rem; background: #f5f3ea; color: #141413; font: 16px/1.45 ui-serif, Georgia, serif; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background: #26241d; color: #faf9f5; } }
   [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
   main { max-width: 60rem; margin: 0 auto; }
   h1 { margin: 0 0 0.2rem; }
-  .lede { margin: 0 0 1rem; font-style: italic; }
+  .lede { margin: 0 0 0.6rem; font-style: italic; }
+  /* The grid is square, so its width is also its height: cap it by the viewport
+     height and the title, grid and toolbar fit one screen without scrolling. */
+  #app { max-width: min(60rem, calc(100vh - 13rem)); margin: 0.4rem auto 0; }
 </style>
 </head>
 <body>
 <main>
   <h1>Plotter</h1>
   <p class="lede">A plain graphing grid. Plot a figure with the Line, Dot and Polygon tools, then turn on the paper, mark points on it, and slide, turn or flip it. The tool never says which move is right.</p>
-  <div id="app"></div>
+  <div id="app" class="pl-bare"></div>
 </main>
 <script>
 /* Plotter: a plain graphing grid for bookSHelf pages, in the style of a graphing question.
@@ -313,6 +346,11 @@
     }
     function X(x) { return M + (x - S.xr[0]) * U; }
     function Y(y) { return M + (S.yr[1] - y) * U; }
+    /* Tick numbers scale with the unit, because the corner is the constraint: the y "-1"
+       ends 3 units left of the axis and the x "-1" is centred one unit left of it, so
+       "−1" must be narrower than (U-3)/1.5 units to clear it. At U=16 a 13px label is
+       3 units too wide and the pair overlapped on IM1 3.1; 10px clears it. */
+    function tickFs() { return Math.max(8, Math.min(13, (U - 3) / 1.3)); }
     function W() { return M * 2 + (S.xr[1] - S.xr[0]) * U; }
     function Hh() { return M * 2 + (S.yr[1] - S.yr[0]) * U; }
     function snapV(v, lo, hi) {
@@ -546,19 +584,24 @@
       var sx = U >= 16 ? 1 : U >= 9 ? 2 : 5, sy = sx, tx;
       for (v = Math.ceil(x0); v <= x1; v++) s("line", { class: "pl-tickmark", x1: X(v), y1: Y(ay) - 4, x2: X(v), y2: Y(ay) + 4 }, g);
       for (v = Math.ceil(y0); v <= y1; v++) s("line", { class: "pl-tickmark", x1: X(ax) - 4, y1: Y(v), x2: X(ax) + 4, y2: Y(v) }, g);
+      /* Number placement, measured at the origin corner. The origin "0" sits in the
+         y-label row hugged against the axis, and the x labels drop one row below the
+         tick marks: at 13px the old "0" (18 below the axis) and the y "-1" (6 below
+         its own gridline) were only 7 units apart and their glyphs overlapped. */
       for (v = Math.ceil(x0); v <= x1; v++) {
         if (v % sx !== 0) continue;
-        if (v === 0 && ax === 0 && ay === 0) tx = s("text", { class: "pl-tick", x: X(0) - 6, y: Y(ay) + 18, "text-anchor": "end" }, g);
-        else if (v === 0) tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 18, "text-anchor": "middle" }, g);
-        else tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 18, "text-anchor": "middle" }, g);
+        var tstyle = "font-size:" + tickFs().toFixed(1) + "px";
+        if (v === 0 && ax === 0 && ay === 0) tx = s("text", { class: "pl-tick", x: X(0) - 3, y: Y(ay) + 6, "text-anchor": "end", style: tstyle }, g);
+        else if (v === 0) tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 22, "text-anchor": "middle", style: tstyle }, g);
+        else tx = s("text", { class: "pl-tick", x: X(v), y: Y(ay) + 22, "text-anchor": "middle", style: tstyle }, g);
         tx.textContent = v;
       }
       for (v = Math.ceil(y0); v <= y1; v++) {
         if (v % sy !== 0 || (v === 0 && ax === 0 && ay === 0)) continue;
-        s("text", { class: "pl-tick", x: X(ax) - 6, y: Y(v) + 6, "text-anchor": "end" }, g).textContent = v;
+        s("text", { class: "pl-tick", x: X(ax) - 3, y: Y(v) + 6, "text-anchor": "end", style: "font-size:" + tickFs().toFixed(1) + "px" }, g).textContent = v;
       }
-      s("text", { class: "pl-axl", x: X(x1) - 2, y: Y(ay) - 6, "text-anchor": "end" }, g).textContent = "x";
-      s("text", { class: "pl-axl", x: X(ax) + 7, y: Y(y1) + 12 }, g).textContent = "y";
+      s("text", { class: "pl-axl", x: X(x1) - 2, y: Y(ay) - 6, "text-anchor": "end", style: "font-size:" + (tickFs() + 2).toFixed(1) + "px" }, g).textContent = "x";
+      s("text", { class: "pl-axl", x: X(ax) + 7, y: Y(y1) + 12, style: "font-size:" + (tickFs() + 2).toFixed(1) + "px" }, g).textContent = "y";
 
       /* things the student drew */
       var gi = s("g", { class: "pl-items", "clip-path": "url(#" + cid + ")" }, svg);
