@@ -150,7 +150,7 @@
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
 
-    /* settings menu: the grid size (the visible x and y range), a popover that opens to the left of the gear */
+    /* settings menu: the grid size (the visible x and y range), a panel docked in the right sidebar under the gear; it stays open until the gear or Escape closes it */
     var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
     function cfgField(row, label, key) {
@@ -649,9 +649,6 @@
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) cin.x0.focus();
     }
-    document.addEventListener("click", function (e) {            // a click anywhere else closes the menu
-      if (!cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
-    });
     root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
       var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
       if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();

@@ -539,10 +539,10 @@ def test_grid_size_can_be_set_and_reset(grid):
     gear.click()
     assert row.is_visible() and gear.get_attribute("aria-expanded") == "true"
     assert row.locator("input").evaluate_all("els => els.map(e => e.value)") == ["-10", "10", "-10", "10"]
-    beside = pg.evaluate("() => { const m = document.querySelector('.pl-cfg').getBoundingClientRect(), g = document.querySelector('button[data-key=settings]').getBoundingClientRect(); return m.right <= g.left && m.top <= g.top + 1; }")
-    assert beside                                                        # the gear sits in the right sidebar; its menu opens to the left of it, on top of the grid
+    docked = pg.evaluate("() => { const m = document.querySelector('.pl-cfg').getBoundingClientRect(), g = document.querySelector('.pl-svg').getBoundingClientRect(); return m.left >= g.right; }")
+    assert docked                                                        # the Settings panel is docked in the right sidebar, beside the grid and not over it
     assert pg.evaluate("() => document.querySelector('.pl-side button[data-key=settings]') !== null and document.querySelector('.pl-main > .pl-svgholder .pl-svg') !== null".replace(" and ", " && "))
-    assert pg.evaluate("() => getComputedStyle(document.querySelector('.pl-cfg')).position") == "absolute"   # a popover, it does not push the page down
+    assert pg.evaluate("() => getComputedStyle(document.querySelector('.pl-cfg')).position") == "static"     # a panel in the sidebar's own column, not a floating popover
     assert pg.evaluate("() => document.activeElement.getAttribute('data-cfg')") == "x0"
     for key, val in (("x0", "-3"), ("x1", "11"), ("y0", "0"), ("y1", "7")):
         row.locator(f"input[data-cfg={key}]").fill(val)
@@ -551,8 +551,7 @@ def test_grid_size_can_be_set_and_reset(grid):
     assert [a.get_attribute(n) for n in ("data-xmin", "data-xmax", "data-ymin", "data-ymax")] == ["-3", "11", "0", "7"]
     grid.tool("Dot"); grid.click(9, 6)
     assert grid.items() == [("point", "9,6")]                            # clicks use the new range
-    assert not row.is_visible()                                          # clicking the grid closed the menu
-    gear.click()
+    assert row.is_visible()                                              # the sidebar stays open while the student works on the grid
     row.locator("input[data-cfg=x1]").fill("-2")
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert a.get_attribute("data-xmax") == "11" and "2 units" in row.inner_text()   # too small: refused, grid unchanged
@@ -563,8 +562,10 @@ def test_grid_size_can_be_set_and_reset(grid):
     row.get_by_role("button", name="Set grid", exact=True).click()
     assert a.get_attribute("data-ymax") == "7"
     row.get_by_role("button", name="Reset grid").click()
-    pg.mouse.click(5, 5)                                                 # a click elsewhere closes it too
-    assert not row.is_visible()
+    pg.mouse.click(5, 5)                                                 # a click elsewhere leaves it open
+    assert row.is_visible()
+    gear.click()                                                         # the gear is the toggle
+    assert not row.is_visible() and gear.get_attribute("aria-expanded") == "false"
     gear.click()
     assert row.is_visible()
     row.locator("input[data-cfg=x0]").focus()
@@ -578,7 +579,7 @@ def test_grid_size_can_be_set_and_reset(grid):
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
 
-def test_settings_menu_stays_beside_the_gear_when_the_grid_changes(grid):
+def test_settings_panel_stays_under_the_gear_when_the_grid_changes(grid):
     pg = grid.pg
     gear = pg.locator("button[data-key=settings]")
     gear.click()
