@@ -55,12 +55,16 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.35rem 0; align-items: center; }
 .pl-bar[hidden], .pl-bar [hidden], .pl-movesbox[hidden], .pl-hint[hidden] { display: none; }
 .pl-svgholder { margin-top: 0.4rem; }
-/* The grid and a dedicated right sidebar. The sidebar holds the gear; the Settings panel opens in the column under it,
-   in flow beside the grid (it never covers the grid). When there is no room beside the grid, the sidebar wraps under it. */
-.pl-main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem; }
-.pl-main .pl-svgholder { flex: 1 1 18rem; min-width: 0; }
-.pl-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 0.4rem; }
-.pl-side .pl-menu { position: static; width: 17rem; max-width: 100%; box-shadow: none; }
+/* The grid and a right sidebar that holds Settings. Wide screens show the Grid size panel in the sidebar all the time
+   (the gear is hidden then). Narrow screens show only the gear, and the panel pops out of it as an overlay over the grid. */
+.pl-main { display: flex; align-items: flex-start; gap: 0.5rem; }
+.pl-main .pl-svgholder { flex: 1 1 auto; min-width: 0; }
+.pl-side { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 0.4rem; }
+.pl-side .pl-menu { left: auto; right: calc(100% + 0.4rem); top: 0; width: min(17rem, calc(100vw - 7rem)); }
+@media (min-width: 60rem) {
+  .pl-side .pl-menu, .pl-side .pl-menu[hidden] { display: flex; position: static; width: 17rem; max-width: 100%; box-shadow: none; }
+  .pl-side .pl-icon[data-key="settings"] { display: none; }
+}
 .pl-drawlbl { margin: 0 0.1rem 0 0.3rem; font-size: 0.95rem; }
 .pl-icon { padding: 0.2rem; display: inline-flex; align-items: center; justify-content: center; }
 .pl-icon svg { display: block; }
@@ -149,8 +153,9 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   /* The grid is square, so its width is also its height: cap it by the viewport
      height and the title, grid and toolbar fit one screen without scrolling. */
   #app { max-width: min(60rem, calc(100vh - 9.75rem)); margin: 0.4rem auto 0; }   /* 13rem of page chrome, less the 3.25rem sidebar that shares the grid's row */
-  /* Opening the Settings panel adds its own 17rem column (+0.5rem gap, less the gear's 3.25rem), so the grid keeps its size. */
-  #app:has(.pl-cfg:not([hidden])) { max-width: min(74rem, calc(100vh + 4.25rem)); }
+  /* On a wide screen the Settings panel is always out in the sidebar (17rem + 0.5rem gap), so the page is that much wider
+     and the grid keeps the size that fits the screen. */
+  @media (min-width: 60rem) { #app { max-width: min(74rem, calc(100vh + 4.25rem)); } }
 </style>
 </head>
 <body>
@@ -312,7 +317,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
 
-    /* settings menu: the grid size (the visible x and y range), a panel docked in the right sidebar under the gear; it stays open until the gear or Escape closes it */
+    /* settings menu: the grid size (the visible x and y range), a panel in the right sidebar: always shown when the screen is wide, an overlay that pops out of the gear when it is narrow */
     var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
     function cfgField(row, label, key) {
@@ -807,16 +812,20 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
+    var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) cin.x0.focus();
     }
+    document.addEventListener("click", function (e) {            // narrow: a click anywhere else closes the overlay
+      if (!wide.matches && !cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
+    });
     root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
       var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
       if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();
     });
     cfg.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); if (wide.matches) return; toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
       var b = e.target.closest && e.target.closest("button[data-key]");
       if (!b || b.disabled) return;

@@ -48,12 +48,16 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.35rem 0; align-items: center; }
 .pl-bar[hidden], .pl-bar [hidden], .pl-movesbox[hidden], .pl-hint[hidden] { display: none; }
 .pl-svgholder { margin-top: 0.4rem; }
-/* The grid and a dedicated right sidebar. The sidebar holds the gear; the Settings panel opens in the column under it,
-   in flow beside the grid (it never covers the grid). When there is no room beside the grid, the sidebar wraps under it. */
-.pl-main { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem; }
-.pl-main .pl-svgholder { flex: 1 1 18rem; min-width: 0; }
-.pl-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 0.4rem; }
-.pl-side .pl-menu { position: static; width: 17rem; max-width: 100%; box-shadow: none; }
+/* The grid and a right sidebar that holds Settings. Wide screens show the Grid size panel in the sidebar all the time
+   (the gear is hidden then). Narrow screens show only the gear, and the panel pops out of it as an overlay over the grid. */
+.pl-main { display: flex; align-items: flex-start; gap: 0.5rem; }
+.pl-main .pl-svgholder { flex: 1 1 auto; min-width: 0; }
+.pl-side { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 0.4rem; }
+.pl-side .pl-menu { left: auto; right: calc(100% + 0.4rem); top: 0; width: min(17rem, calc(100vw - 7rem)); }
+@media (min-width: 60rem) {
+  .pl-side .pl-menu, .pl-side .pl-menu[hidden] { display: flex; position: static; width: 17rem; max-width: 100%; box-shadow: none; }
+  .pl-side .pl-icon[data-key="settings"] { display: none; }
+}
 .pl-drawlbl { margin: 0 0.1rem 0 0.3rem; font-size: 0.95rem; }
 .pl-icon { padding: 0.2rem; display: inline-flex; align-items: center; justify-content: center; }
 .pl-icon svg { display: block; }

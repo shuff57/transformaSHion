@@ -150,7 +150,7 @@
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
 
-    /* settings menu: the grid size (the visible x and y range), a panel docked in the right sidebar under the gear; it stays open until the gear or Escape closes it */
+    /* settings menu: the grid size (the visible x and y range), a panel in the right sidebar: always shown when the screen is wide, an overlay that pops out of the gear when it is narrow */
     var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
     var cin = {};
     function cfgField(row, label, key) {
@@ -645,16 +645,20 @@
 
     /* ---- buttons ---- */
     bar.addEventListener("click", onBtn); pbar.addEventListener("click", onBtn); side.addEventListener("click", onBtn);   // the sidebar holds the gear and its menu
+    var wide = window.matchMedia ? window.matchMedia("(min-width: 60rem)") : { matches: false };   // wide: the panel is always out (see the CSS); narrow: an overlay
     function toggleSettings(open) {
       cfg.hidden = !open; setBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) cin.x0.focus();
     }
+    document.addEventListener("click", function (e) {            // narrow: a click anywhere else closes the overlay
+      if (!wide.matches && !cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
+    });
     root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
       var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
       if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();
     });
     cfg.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); if (wide.matches) return; toggleSettings(false); setBtn.focus(); return; } if (e.key === "Enter" && e.target.closest && e.target.closest("input")) { e.preventDefault(); applyGrid(); render(); } });
     function onBtn(e) {
       var b = e.target.closest && e.target.closest("button[data-key]");
       if (!b || b.disabled) return;
