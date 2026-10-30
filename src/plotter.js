@@ -170,7 +170,7 @@
     var pbar = h("div", { class: "pl-bar pl-pbar", role: "toolbar", "aria-label": "Paper tools" });
     pbar.appendChild(h("p", { class: "pl-pbartitle" }, "Paper"));      // shown only when the toolbar is a card in the left sidebar (wide screens)
     var paperBtn = addBtn(pbar, "paper", "", "pl-icon");               // the paper toggle sits with the paper tools; the other tools show only while the paper is on
-    paperBtn.innerHTML = ICON.paper; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
+    paperBtn.innerHTML = ICON.paper + '<span class="pl-togt">Off</span>'; paperBtn.setAttribute("aria-label", LABEL.paper); paperBtn.setAttribute("title", LABEL.paper);
     paperBtn.setAttribute("aria-pressed", "false");
     PAPER.forEach(function (k) { addBtn(pbar, k, LABEL[k], "pl-tool").setAttribute("aria-pressed", "false"); });
     var ccw = addBtn(pbar, "ccw", "\u21BA 15\u00B0"); ccw.setAttribute("aria-label", "Turn paper 15 degrees counterclockwise");
@@ -562,6 +562,7 @@
         if (DRAW.indexOf(k) >= 0 || PAPER.indexOf(k) >= 0) btn[k].setAttribute("aria-pressed", S.tool === k ? "true" : "false");
       });
       paperBtn.setAttribute("aria-pressed", S.paper ? "true" : "false");
+      paperBtn.querySelector(".pl-togt").textContent = S.paper ? "On" : "Off";
       Array.prototype.forEach.call(pbar.querySelectorAll("button"), function (b) { if (b !== paperBtn) b.hidden = !S.paper; });
       btn.close.hidden = !(S.tool === "polygon" && S.pending.length >= 3);
       btn.ccw.hidden = btn.cw.hidden = !(S.paper && S.tool === "turn" && S.center);

@@ -71,7 +71,11 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
   .pl-left .pl-hint, .pl-left .pl-status { margin: 0; font-size: 0.85rem; }
   .pl-left .pl-pbar { flex: 0 0 auto; box-sizing: border-box; width: 17rem; max-width: 100%; margin: 0; padding: 0.6rem 0.7rem; background: var(--pl-panel); color: var(--pl-ink);
     border: 1.5px solid var(--pl-axis); border-radius: 8px; font-size: 0.9rem; }
-  .pl-left .pl-pbartitle { display: block; flex: 1 1 auto; margin: 0; font-weight: 700; }
+  .pl-left .pl-pbar { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; align-items: center; }
+  .pl-left .pl-pbartitle { display: block; margin: 0; font-weight: 700; }
+  .pl-left .pl-pbar .pl-btn { width: 100%; box-sizing: border-box; }
+  .pl-left .pl-pbar .pl-icon { grid-column: 2; }
+  .pl-left .pl-pbar [data-key="togrid"], .pl-left .pl-pbar [data-key="check"] { grid-column: 1 / -1; }
   .pl-left .pl-hint:empty, .pl-left .pl-status:empty { display: none; }
   .pl > .pl-main ~ * { margin-left: 17.5rem; margin-right: 17.5rem; }
   .pl > .pl-main ~ .pl-bar { justify-content: center; }
@@ -102,6 +106,7 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-movesempty[hidden] { display: none; }
 .pl-left:empty { display: none; }
 .pl-pbartitle { display: none; }
+.pl-togt { margin-left: 0.4rem; font-size: 0.85rem; font-weight: 600; }
 .pl-setup { margin-top: 0.6rem; }
 .pl-setup summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--pl-accent); }
 .pl-setupgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
