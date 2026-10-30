@@ -498,7 +498,7 @@ def test_reduced_motion_page_loads_clean(browser, site):
 def test_the_paper_button_is_a_sheet_with_a_dog_ear(grid):
     b = grid.pg.locator("button[data-key=paper]")
     assert b.get_attribute("aria-label") == "Paper" and b.get_attribute("title") == "Paper"
-    assert b.inner_text().strip() == ""                                   # an icon, no text
+    assert b.inner_text().strip() == "Off"                                # an icon and a short On/Off label
     d = b.locator("svg path").evaluate_all("els => els.map(e => e.getAttribute('d'))")
     assert len(d) == 2 and d[1].startswith("M14 3v5h5")                  # the sheet outline, then the folded corner
     grid.paper_on()
