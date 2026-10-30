@@ -49,11 +49,17 @@ def build_plotter():
     page = (ROOT / "plotter.html").read_text(encoding="utf-8")
     page = page.replace('<link rel="stylesheet" href="src/plotter.css">', "<style>\n" + css + "</style>")
     page = page.replace('<script src="src/plotter.js"></script>', "<script>\n" + js + "</script>")
+    icons = ("favicon.svg", "favicon.ico", "apple-touch-icon.png")
+    for name in icons:
+        page = page.replace(f'href="src/{name}"', f'href="{name}"')
     assert 'src="src/' not in page and 'href="src/' not in page, "a src/ reference survived (plotter)"
     (DIST / "plotter.html").write_text(page, encoding="utf-8")
     (DIST / "index.html").write_text(page, encoding="utf-8")
     (DIST / "site").mkdir(exist_ok=True)
     (DIST / "site" / "index.html").write_text(page, encoding="utf-8")
+    for d in (DIST, DIST / "site"):
+        for name in icons:
+            (d / name).write_bytes((SRC / name).read_bytes())
 
 
 def read_index():

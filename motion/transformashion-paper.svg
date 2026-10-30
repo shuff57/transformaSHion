@@ -100,7 +100,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .paper, .ghost, .pulse { display: none; }
-      .sh-move, .sh-flip { animation: none; }
+      .sh-move, .sh-flip, .sh-glyph, .paper-back, .paper-hatch { animation: none; }
     }
   </style>
 

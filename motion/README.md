@@ -41,3 +41,10 @@ one study on a page, scope each file's style block, or keep them as separate ima
 
 The two light studies follow `prefers-color-scheme`. All three stop animating and show the finished
 wordmark under `prefers-reduced-motion: reduce`.
+
+## In the site header
+
+`plotter.html` carries a compact, inline version of the tracing-paper study at the top of the page.
+It plays one cycle when the page loads, loops while the pointer is over the wordmark, and settles
+back to the finished wordmark when the pointer leaves. Under reduced motion it shows the still
+wordmark and never starts.

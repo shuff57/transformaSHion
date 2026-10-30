@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tracing paper</title>
+<link rel="icon" href="src/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="src/favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="src/apple-touch-icon.png">
 <link rel="stylesheet" href="src/plotter.css">
 <style>
   :root { color-scheme: light dark; }
@@ -12,18 +15,128 @@
   [data-theme="dark"] body { background: #26241d; color: #faf9f5; }
   main { max-width: 90rem; margin: 0 auto; }
   h1 { margin: 0 0 0.2rem; }
+  .wm { width: min(100%, 36rem); }
+  .wm svg { display: block; width: min(100%, 36rem); height: auto; overflow: visible; }
+  .wm-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .lede { margin: 0 0 0.6rem; font-style: italic; }
   /* The grid is square, so its width is also its height: cap it by the viewport
      height and the title, grid and toolbar fit one screen without scrolling. */
-  #app { max-width: min(60rem, calc(100vh - 9.75rem)); margin: 0.4rem auto 0; }   /* 13rem of page chrome, less the 3.25rem sidebar that shares the grid's row */
+  #app { max-width: min(60rem, calc(100vh - 14.25rem)); margin: 0.4rem auto 0; }   /* 14.25rem of page chrome, less the 3.25rem sidebar that shares the grid's row */
   /* On a wide screen the Settings sidebar (17rem + 0.5rem gap) is mirrored by an empty column on the left so the grid is centered;
      the page is 2 x 17.5rem wider than the grid, which keeps the size that fits the screen. */
-  @media (min-width: 60rem) { #app { max-width: min(90rem, calc(100vh + 21.75rem)); } }
+  @media (min-width: 60rem) { #app { max-width: min(90rem, calc(100vh + 17.25rem)); } }
 </style>
 </head>
 <body>
 <main>
-  <h1>tracing paper</h1>
+  <h1 class="wm">
+    <span class="wm-sr">transformaSHion</span>
+    <svg xmlns="http://www.w3.org/2000/svg" id="tp-head" viewBox="0 0 1400 280" aria-hidden="true" focusable="false">
+      <title id="tph-title">transformaSHion</title>
+      <desc id="tph-desc">The letters SH lift off a scrap of tracing paper, slide to the right, turn half around, flip face down, and return to the word.</desc>
+      <style>
+        #tp-head {
+          --loop: 7.2s;
+          --ink: #141413;
+          --accent: #b3520f;
+          --line: #cfcabd;
+          --paper: rgba(255, 238, 170, 0.62);
+          --paper-back: rgba(190, 210, 235, 0.66);
+          --paper-edge: #b99f4e;
+          font-family: ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+          text-rendering: geometricPrecision;
+        }
+        @media (prefers-color-scheme: dark) {
+          #tp-head {
+            --ink: #faf9f5;
+            --accent: #e0a96d;
+            --line: #55524a;
+            --paper: rgba(224, 196, 110, 0.30);
+            --paper-back: rgba(122, 155, 191, 0.34);
+            --paper-edge: #8e7b46;
+          }
+        }
+
+        #tp-head .word { fill: var(--ink); font-size: 150px; }
+        #tp-head .rule { fill: var(--accent); opacity: 0.9; }
+
+        #tp-head .sh-move { transform-box: fill-box; transform-origin: 50% 50%; animation: tph-move var(--loop) infinite; }
+        @keyframes tph-move {
+          0%, 7%   { transform: translate(0, 0) rotate(0deg); animation-timing-function: cubic-bezier(0.45, 0, 0.15, 1); }
+          20%      { transform: translate(440px, 0) rotate(0deg); animation-timing-function: linear; }
+          23%      { transform: translate(440px, 0) rotate(0deg); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+          37%      { transform: translate(440px, 0) rotate(180deg); animation-timing-function: linear; }
+          47%      { transform: translate(440px, 0) rotate(180deg); animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1); }
+          66%      { transform: translate(0, 0) rotate(360deg); animation-timing-function: linear; }
+          100%     { transform: translate(0, 0) rotate(360deg); }
+        }
+        #tp-head .sh-flip { transform-box: fill-box; transform-origin: 50% 50%; animation: tph-flip var(--loop) infinite; }
+        @keyframes tph-flip {
+          0%, 37%   { transform: scaleX(1); animation-timing-function: cubic-bezier(0.55, 0, 0.3, 1); }
+          47%, 66%  { transform: scaleX(-1); animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1); }
+          76%, 100% { transform: scaleX(1); }
+        }
+        #tp-head .paper { opacity: 0; filter: url(#tph-shadow); animation: tph-paper var(--loop) linear infinite; }
+        @keyframes tph-paper {
+          0%, 9%    { opacity: 0; }
+          15%, 47%  { opacity: 1; }
+          58%, 100% { opacity: 0; }
+        }
+        #tp-head .paper-face { fill: var(--paper); stroke: var(--line); stroke-width: 1; }
+        #tp-head .paper-back, #tp-head .paper-hatch { opacity: 0; animation: tph-back var(--loop) linear infinite; }
+        #tp-head .paper-back { fill: var(--paper-back); stroke: var(--paper-edge); stroke-width: 1; }
+        #tp-head .paper-hatch { fill: url(#tph-hatch); }
+        @keyframes tph-back {
+          0%, 40%   { opacity: 0; }
+          44%, 100% { opacity: 1; }
+        }
+        #tp-head .dogear { fill: var(--accent); opacity: 0.8; }
+        #tp-head .sh-glyph { animation: tph-depth var(--loop) linear infinite; }
+        @keyframes tph-depth {
+          0%, 40%   { fill-opacity: 1; }
+          44%, 58%  { fill-opacity: 0.55; }
+          68%, 100% { fill-opacity: 1; }
+        }
+        #tp-head .pulse { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; animation: tph-pulse var(--loop) cubic-bezier(0.2, 0.6, 0.2, 1) infinite; }
+        @keyframes tph-pulse {
+          0%, 74%   { opacity: 0; transform: scale(0.96); }
+          77%       { opacity: 0.45; }
+          84%, 100% { opacity: 0; transform: scale(1.06); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          #tp-head .paper, #tp-head .pulse { display: none; }
+          #tp-head .sh-move, #tp-head .sh-flip, #tp-head .sh-glyph, #tp-head .paper-back, #tp-head .paper-hatch { animation: none; }
+        }
+      </style>
+
+      <defs>
+        <pattern id="tph-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="var(--paper-edge)" stroke-width="1" stroke-opacity="0.55"/>
+        </pattern>
+        <filter id="tph-shadow" x="-40%" y="-40%" width="180%" height="180%">
+          <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#000000" flood-opacity="0.16"/>
+        </filter>
+      </defs>
+
+      <text class="word" x="0" y="190" textLength="649.7" lengthAdjust="spacing">transforma</text>
+      <text class="word" x="841.4" y="190" textLength="191.7" lengthAdjust="spacing">ion</text>
+      <rect class="rule" x="670.55" y="203" width="150" height="4" rx="2"/>
+      <rect class="pulse" x="641.55" y="74" width="208" height="132" rx="6"/>
+
+      <g class="sh-move">
+        <g class="sh-flip">
+          <g class="paper">
+            <rect class="paper-face" x="640.55" y="81" width="210" height="120" rx="6"/>
+            <rect class="paper-back" x="640.55" y="81" width="210" height="120" rx="6"/>
+            <rect class="paper-hatch" x="640.55" y="81" width="210" height="120" rx="6"/>
+            <path class="dogear" d="M 832.55 81 H 850.55 V 99 Z"/>
+          </g>
+          <text class="word sh-glyph" x="649.7" y="190" textLength="191.7" lengthAdjust="spacing">SH</text>
+        </g>
+      </g>
+    </svg>
+
+  </h1>
   <p class="lede">Plot a figure, then turn on the paper to test a slide, turn or flip.</p>
   <div id="app" class="pl-bare"></div>
 </main>
@@ -32,6 +145,71 @@
   // ?preset=parallel or #parallel picks a starting grid
   var want = new URLSearchParams(location.search).get("preset") || location.hash.replace(/^#/, "");
   window.plotter = Plotter.mount(document.getElementById("app"), { presets: Plotter.presets, preset: want || undefined });
+</script>
+
+<script>
+(function () {
+  var svg = document.getElementById("tp-head");
+  if (!svg || !svg.getAnimations) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var anims = svg.getAnimations({ subtree: true });
+  if (!anims.length) return;
+  var duration = 0;
+  anims.forEach(function (a) { duration = Math.max(duration, a.effect.getComputedTiming().duration); });
+  var START = Math.round(duration * 0.07);   // the SH is at rest and about to leave
+  var REST = Math.round(duration * 0.85);    // the SH is home, the pulse has faded
+  var SETTLE = 1;                            // play out the current cycle at normal speed when the pointer leaves
+  var timer = 0;
+
+  function once() {
+    anims.forEach(function (a) {
+      a.effect.updateTiming({ iterations: 1 });
+      a.playbackRate = 1;
+      a.currentTime = 0;
+      a.play();
+    });
+  }
+
+  function loop() {
+    clearTimeout(timer); timer = 0;
+    anims.forEach(function (a) {
+      a.playbackRate = 1;
+      a.effect.updateTiming({ iterations: Infinity });
+      if (a.playState !== "running") a.currentTime = START;
+      a.play();
+    });
+  }
+
+  function settle() {
+    clearTimeout(timer); timer = 0;
+    var phase = 0, remaining = 0;
+    anims.forEach(function (a) {
+      phase = Math.max(phase, a.currentTime % duration);
+    });
+    anims.forEach(function (a) {
+      if (phase < START || phase >= REST) return;
+      a.currentTime = a.currentTime % duration;
+      a.effect.updateTiming({ iterations: 1 });
+      a.playbackRate = SETTLE;
+      a.play();
+      remaining = Math.max(remaining, REST - (a.currentTime % duration));
+    });
+    if (!remaining) {
+      anims.forEach(function (a) { a.pause(); a.playbackRate = 1; });
+      return;
+    }
+    timer = setTimeout(function () {
+      anims.forEach(function (a) { a.pause(); a.playbackRate = 1; });
+    }, remaining / SETTLE + 40);
+  }
+
+  once();
+  if (window.matchMedia("(hover: hover)").matches) {
+    var host = svg.closest("h1") || svg;
+    host.addEventListener("pointerenter", loop);
+    host.addEventListener("pointerleave", settle);
+  }
+})();
 </script>
 </body>
 </html>

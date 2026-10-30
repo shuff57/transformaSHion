@@ -79,7 +79,8 @@ shapes, mirrors and checks.
 `motion/` holds three standalone animated SVGs of the wordmark. In each, the SH slides out, turns, flips,
 and settles back into the name. Open `motion/index.html` for the preview sheet. Every file is
 self-contained, follows light and dark (except the dark diagram), and shows the still wordmark under
-`prefers-reduced-motion`.
+`prefers-reduced-motion`. The plotter page uses a compact inline version as its header: it plays once
+on load, then loops while hovered.
 
 ## Files
 
