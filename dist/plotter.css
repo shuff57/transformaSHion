@@ -162,6 +162,8 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-menu[hidden] { display: none; }
 .pl-menutitle { margin: 0; font-weight: 700; }
 .pl-menurow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.pl-cfgbtns { flex-wrap: nowrap; justify-content: center; }
+.pl-cfgbtns .pl-btn { flex: 1 1 0; min-width: 0; text-align: center; }
 .pl-cfglbl { display: inline-flex; align-items: center; gap: 0.3rem; }
 .pl-menu .pl-num { width: 4.4rem; min-height: 44px; }
 .pl-cfgmsg { margin: 0; font-size: 0.85rem; min-height: 1.1em; }

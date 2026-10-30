@@ -165,7 +165,7 @@
       lab.appendChild(inp); cin[key] = inp; row.appendChild(lab);
     }
     cfg.appendChild(h("p", { class: "pl-menutitle" }, "Grid size"));
-    var rowX = h("div", { class: "pl-menurow" }), rowY = h("div", { class: "pl-menurow" }), rowB = h("div", { class: "pl-menurow" });
+    var rowX = h("div", { class: "pl-menurow" }), rowY = h("div", { class: "pl-menurow" }), rowB = h("div", { class: "pl-menurow pl-cfgbtns" });
     cfgField(rowX, "x from", "x0"); cfgField(rowX, "to", "x1"); cfgField(rowY, "y from", "y0"); cfgField(rowY, "to", "y1");
     cfg.appendChild(rowX); cfg.appendChild(rowY); cfg.appendChild(rowB);
     addBtn(rowB, "setgrid", "Set grid");
