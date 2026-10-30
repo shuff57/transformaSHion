@@ -35,6 +35,7 @@
   var M = 30;                       // margin around the plot, in viewBox units (room for tick labels)
   var DRAW = ["line", "point", "polygon", "erase"];
   var PAPER = ["mark", "slide", "turn", "flip"];
+  var KEYS = { line: "L", point: "D", polygon: "P", erase: "E", paper: "T", mark: "M", slide: "S", turn: "R", flip: "F" };   // one key per tool; Ctrl+Z / Ctrl+Y undo and redo
   var LABEL = { point: "Dot", line: "Line", polygon: "Polygon", erase: "Eraser",
     mark: "Mark on paper", slide: "Slide", turn: "Turn", flip: "Flip", paper: "Paper", settings: "Settings", undo: "Undo", redo: "Redo" };
 
@@ -103,7 +104,7 @@
       tool: "line", items: [], pending: [], hover: null, preview: null, down: false, drag: null,
       paper: false, T: I.slice(), marks: [], outlines: [], moves: [], center: null, hAng: 0, flipFrom: null,
       status: "", kb: null, kbOn: false, turnLive: null,
-      names: {}, nameSeq: 0, lblOff: {}, lbl: null,     // lblOff: how far a name has been dragged from its usual spot, by position                 // a letter for every plotted position (A, B, C ...), and how many have been handed out
+      names: {}, lblOff: {}, lbl: null, pdrag: null,     // lblOff: how far a name has been dragged from its usual spot, by position                 // a letter for every plotted position (A, B, C ...), and how many have been handed out
     };
 
     host.innerHTML = "";
@@ -155,6 +156,7 @@
     setBtn.innerHTML = ICON.settings; setBtn.setAttribute("aria-label", LABEL.settings); setBtn.setAttribute("title", LABEL.settings);
     setBtn.setAttribute("aria-expanded", "false"); setBtn.setAttribute("aria-haspopup", "true");
     root_.appendChild(bar);
+    root_.appendChild(h("p", { class: "pl-keys" }, "Keys: L line \u00B7 D dot \u00B7 P polygon \u00B7 E eraser \u00B7 T paper. With the paper on: M mark \u00B7 S slide \u00B7 R turn \u00B7 F flip \u00B7 Ctrl+Z undo \u00B7 Ctrl+Y redo."));
 
     /* settings menu: the grid size (the visible x and y range), a panel in the right sidebar: always shown when the screen is wide, an overlay that pops out of the gear when it is narrow */
     var cfg = h("div", { class: "pl-menu pl-cfg", role: "group", "aria-label": "Grid size", hidden: "" });
@@ -280,7 +282,28 @@
       while (n > 0) { r = (n - 1) % 26; out = String.fromCharCode(65 + r) + out; n = Math.floor((n - 1) / 26); }
       return out;
     }
-    function nameAt(q) { var k = nk(q); return S.names[k] || (S.names[k] = letter(S.nameSeq++)); }
+    function nameAt(q) {                                          // a new point takes the first letter nobody is using, so a deleted B comes back as B
+      var k = nk(q), used = {}, i = 0, n;
+      if (S.names[k]) return S.names[k];
+      for (n in S.names) used[S.names[n]] = 1;
+      while (used[letter(i)]) i++;
+      return (S.names[k] = letter(i));
+    }
+    function pruneNames() {                                       // a name belongs to a plotted position: when nothing is plotted there any more, the name is free again
+      var here = {}, k;
+      S.items.forEach(function (it) { if (it.kind !== "line") it.pts.forEach(function (c) { here[nk(c)] = 1; }); });
+      for (k in S.names) if (!here[k]) { delete S.names[k]; delete S.lblOff[k]; }
+    }
+    function movePoint(it, np) {                                  // drag a dot to a new crossing, taking its name and the name's offset along
+      var ok = nk(it.pts[0]), nkey = nk(np), shared;
+      if (ok === nkey || hasPoint(np)) return false;
+      shared = S.items.some(function (o) { return o !== it && o.kind !== "line" && o.pts.some(function (c) { return nk(c) === ok; }); });
+      if (S.names[ok] && !S.names[nkey]) S.names[nkey] = S.names[ok];
+      if (S.lblOff[ok] && !S.lblOff[nkey]) S.lblOff[nkey] = S.lblOff[ok];
+      if (!shared) { delete S.names[ok]; delete S.lblOff[ok]; }
+      it.pts[0] = np;
+      return true;
+    }
     function addItem(kind, pts) {
       if (kind !== "line") pts.forEach(nameAt);                  // dots and polygon corners are named; a line is not
       S.items.push({ id: ++uid, kind: kind, pts: pts });
@@ -483,6 +506,7 @@
 
     /* ---- drawing ---- */
     function render() {
+      pruneNames();
       track();
       layout();
       var w = W(), hgt = Hh(), x0 = S.xr[0], x1 = S.xr[1], y0 = S.yr[0], y1 = S.yr[1];
@@ -714,11 +738,21 @@
         S.turnLive = { delta: 0, h0: S.hAng };
         e.preventDefault(); render(); return;
       }
+      if (S.tool === "point") {                                  // with the Dot tool a dot can be grabbed and dragged to another crossing
+        var grab = null, gd = Math.max(tol(d), 8 * d[2]);
+        S.items.forEach(function (it) {
+          if (it.kind !== "point") return;
+          var dd = Math.hypot(d[0] - X(it.pts[0][0]), d[1] - Y(it.pts[0][1]));
+          if (dd <= gd) { gd = dd; grab = it; }
+        });
+        if (grab) { S.pdrag = grab; setStatus(""); e.preventDefault(); return; }
+      }
       if (!S.paper && PAPER.indexOf(S.tool) >= 0) return;
       S.down = true; S.preview = snapPt(d); render();
     });
     svg.addEventListener("pointermove", function (e) {
       var d = toDraw(e);
+      if (S.pdrag) { if (movePoint(S.pdrag, snapPt(d))) render(); return; }
       if (S.lbl) { S.lblOff[S.lbl.k] = [S.lbl.o[0] + d[0] - S.lbl.x, S.lbl.o[1] + d[1] - S.lbl.y]; render(); return; }
       if (S.drag && S.drag.type === "slide") {
         var p = toData(d), st = S.snap;
@@ -742,6 +776,7 @@
     });
     function endPointer(e, cancelled) {
       if (S.lbl) { S.lbl = null; return; }
+      if (S.pdrag) { S.pdrag = null; return; }
       var d = toDraw(e);
       if (S.drag) {
         var dr = S.drag; S.drag = null;
@@ -773,6 +808,7 @@
       var k = e.key, st = S.snap;
       if (folding) return;
       if (k === "Escape") { cancelPending(); setStatus(""); setKb(false); render(); return; }
+      if (toolKey(e)) { e.stopPropagation(); return; }
       if (!kbEntered) return;                                     // focused by a click: the keys belong to the host page, not the keyboard cursor
       e.stopPropagation();
       var dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[k];
@@ -811,6 +847,27 @@
     document.addEventListener("click", function (e) {            // narrow: a click anywhere else closes the overlay
       if (!wide.matches && !cfg.hidden && !cfg.contains(e.target) && !setBtn.contains(e.target)) toggleSettings(false);
     });
+    Object.keys(KEYS).forEach(function (k) {                      // advertise the shortcuts on the buttons: a corner letter, the tooltip and the accessible hint
+      var b = btn[k], name = LABEL[k];
+      if (!b) return;
+      b.setAttribute("data-kbd", KEYS[k]); b.setAttribute("aria-keyshortcuts", KEYS[k]);
+      b.setAttribute("title", name + " (" + KEYS[k] + ")");
+      b.setAttribute("aria-label", name);
+    });
+    undoBtn.setAttribute("title", "Undo (Ctrl+Z)"); undoBtn.setAttribute("aria-keyshortcuts", "Control+Z");
+    redoBtn.setAttribute("title", "Redo (Ctrl+Y)"); redoBtn.setAttribute("aria-keyshortcuts", "Control+Y");
+    var byKey = {}; Object.keys(KEYS).forEach(function (k) { byKey[KEYS[k].toLowerCase()] = k; });
+    function toolKey(e) {                                         // tool shortcuts work from the grid or any button, never while typing in a box
+      var t = e.target, tag = t && t.tagName, k = e.key.length === 1 ? e.key.toLowerCase() : "", want = null;
+      if (folding || e.defaultPrevented || e.altKey || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return false;
+      if (e.ctrlKey || e.metaKey) { if (k === "z") want = e.shiftKey ? "redo" : "undo"; else if (k === "y") want = "redo"; }
+      else if (!e.shiftKey) want = byKey[k] || null;
+      var b = want && btn[want];
+      if (!b || b.hidden || b.disabled) return false;
+      e.preventDefault(); b.click();
+      return true;
+    }
+    root_.addEventListener("keydown", toolKey);
     root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
       var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
       if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();
@@ -822,7 +879,7 @@
       if (!b || b.disabled || folding) return;
       var k = b.getAttribute("data-key");
       if (DRAW.indexOf(k) >= 0 || (PAPER.indexOf(k) >= 0)) { selectTool(k); return; }
-      if (k === "clear") { S.items = []; S.names = {}; S.nameSeq = 0; S.lblOff = {}; cancelPending(); setStatus(""); }
+      if (k === "clear") { S.items = []; S.names = {}; S.lblOff = {}; cancelPending(); setStatus(""); }
       else if (k === "paper") {
         S.paper = !S.paper;
         if (!S.paper && PAPER.indexOf(S.tool) >= 0) S.tool = "line";

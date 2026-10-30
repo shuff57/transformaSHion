@@ -497,7 +497,7 @@ def test_reduced_motion_page_loads_clean(browser, site):
 # ---------------------------------------------------------------- paper icon, image to grid, grid size
 def test_the_paper_button_is_a_sheet_with_a_dog_ear(grid):
     b = grid.pg.locator("button[data-key=paper]")
-    assert b.get_attribute("aria-label") == "Paper" and b.get_attribute("title") == "Paper"
+    assert b.get_attribute("aria-label") == "Paper" and b.get_attribute("title") == "Paper (T)"
     assert b.inner_text().strip() == "Off"                                # an icon and a short On/Off label
     d = b.locator("svg path").evaluate_all("els => els.map(e => e.getAttribute('d'))")
     assert len(d) == 2 and d[1].startswith("M14 3v5h5")                  # the sheet outline, then the folded corner
@@ -732,3 +732,45 @@ def test_a_point_name_can_be_renamed_with_a_double_click_and_dragged_around(grid
     after = lab.bounding_box()
     assert abs(after["x"] - before["x"] - 60) < 2 and abs(after["y"] - before["y"] - 40) < 2   # it follows the pointer
     assert len(pg.locator(".pl-item").all()) == 1                          # and the drag did not plot a new point
+
+
+def test_a_deleted_name_is_reused_and_a_dot_can_be_dragged_with_the_dot_tool(grid):
+    pg = grid.pg
+    names = lambda: pg.eval_on_selector_all(".pl-plbl", "e => e.map(x => x.textContent)")
+    grid.tool("Dot"); grid.click(-4, 2); grid.click(0, 2); grid.click(4, 2)
+    assert names() == ["A", "B", "C"]
+    grid.tool("Eraser"); grid.click(0, 2)
+    assert names() == ["A", "C"]
+    grid.tool("Dot"); grid.click(0, -3)
+    assert sorted(names()) == ["A", "B", "C"]                             # the new point took the freed B
+    grid.pg.evaluate("() => 0")
+    a = pg.locator("svg.pl-svg"); box = a.bounding_box()
+    d = a.evaluate("s => [+s.dataset.xmin, +s.dataset.ymax, +s.dataset.u, +s.dataset.m, s.viewBox.baseVal.width]")
+    at = lambda x, y: (box["x"] + (d[3] + (x - d[0]) * d[2]) * box["width"] / d[4], box["y"] + (d[3] + (d[1] - y) * d[2]) * box["width"] / d[4])
+    pg.mouse.move(*at(-4, 2)); pg.mouse.down(); pg.mouse.move(*at(-2, 5), steps=5); pg.mouse.up()
+    pts = pg.eval_on_selector_all(".pl-item[data-kind=point]", "e => e.map(x => x.dataset.pts)")
+    assert "-2,5" in pts and "-4,2" not in pts and len(pts) == 3          # the dot moved, nothing new was plotted
+    assert "A" in names()                                                 # and its name went with it
+
+
+def test_keyboard_shortcuts_pick_the_tools_and_are_advertised(grid):
+    pg = grid.pg
+    pressed = lambda: pg.eval_on_selector_all(".pl-bar:not(.pl-pbar) [aria-pressed=true]", "e => e.map(x => x.dataset.key)")
+    assert pg.locator("[data-key=point]").get_attribute("title") == "Dot (D)"      # the tooltip names the key
+    assert pg.locator("[data-key=line]").get_attribute("data-kbd") == "L"          # and so does a corner letter on the button
+    assert pg.locator(".pl-keys").is_visible()                                       # and a line of text under the toolbar
+    pg.locator(".pl-svg").focus()
+    pg.keyboard.press("d"); assert pressed() == ["point"]
+    pg.keyboard.press("p"); assert pressed() == ["polygon"]
+    pg.keyboard.press("e"); assert pressed() == ["erase"]
+    pg.keyboard.press("l"); assert pressed() == ["line"]
+    pg.keyboard.press("s"); assert pressed() == ["line"]                           # the paper tools wait for the paper
+    pg.keyboard.press("t")
+    assert pg.locator("[data-key=paper]").get_attribute("aria-pressed") == "true"
+    pg.keyboard.press("s"); assert pg.locator("[data-key=slide]").get_attribute("aria-pressed") == "true"
+    pg.keyboard.press("f"); assert pg.locator("[data-key=flip]").get_attribute("aria-pressed") == "true"
+    pg.keyboard.press("Control+z")                                                   # nothing to undo yet: harmless
+    pg.locator("[data-key=setgrid]") and None
+    pg.locator(".pl-svg").focus(); pg.keyboard.press("Shift+ArrowRight")           # Shift+arrows still slide
+    pg.keyboard.press("Control+z")
+    assert grid.moves() == []

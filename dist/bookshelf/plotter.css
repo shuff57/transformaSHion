@@ -88,6 +88,11 @@ ol:has(+ .pl-beside) { float: left; width: 50%; margin: 0 1.5rem 0.75rem 0; }
 .pl-pbar { padding-top: 0.35rem; border-top: 1px dashed var(--pl-line); }
 .pl-btn { font: inherit; color: var(--pl-ink); background: var(--pl-panel); border: 1.5px solid var(--pl-axis); border-radius: 6px;
   padding: 0.3rem 0.7rem; min-height: 44px; min-width: 44px; cursor: pointer; touch-action: manipulation; }
+.pl-btn[data-kbd] { position: relative; }
+.pl-btn[data-kbd]::after { content: attr(data-kbd); position: absolute; right: 3px; bottom: 1px; font: 600 0.6rem/1 ui-sans-serif, system-ui, sans-serif; opacity: 0.6; pointer-events: none; }
+.pl-btn[aria-pressed="true"][data-kbd]::after { opacity: 0.85; }
+.pl-keys { margin: 0.3rem 0 0; font-size: 0.8rem; text-align: center; opacity: 0.75; }
+@media (hover: none) { .pl-keys { display: none; } }
 .pl-btn:hover:not(:disabled) { border-color: var(--pl-accent); }
 .pl-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .pl-btn[aria-pressed="true"] { background: var(--pl-curve); color: var(--pl-bg); border-color: var(--pl-curve); font-weight: 700; }
