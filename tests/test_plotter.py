@@ -774,3 +774,12 @@ def test_keyboard_shortcuts_pick_the_tools_and_are_advertised(grid):
     pg.locator(".pl-svg").focus(); pg.keyboard.press("Shift+ArrowRight")           # Shift+arrows still slide
     pg.keyboard.press("Control+z")
     assert grid.moves() == []
+
+
+def test_shortcuts_work_with_nothing_focused(grid):
+    pg = grid.pg
+    pressed = lambda: pg.eval_on_selector_all(".pl-bar:not(.pl-pbar) [aria-pressed=true]", "e => e.map(x => x.dataset.key)")
+    pg.keyboard.press("d"); assert pressed() == ["point"]                   # a fresh page: no click, no focus
+    pg.mouse.click(5, 5); pg.keyboard.press("p"); assert pressed() == ["polygon"]   # after a click on empty page
+    pg.keyboard.press("t"); assert pg.locator("[data-key=paper]").get_attribute("aria-pressed") == "true"
+    pg.keyboard.press("f"); assert pg.locator("[data-key=flip]").get_attribute("aria-pressed") == "true"

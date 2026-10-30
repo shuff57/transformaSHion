@@ -91,6 +91,7 @@
   }
 
   /* ------------------------------------------------------------------ the tool */
+  var mounted = [], lastActive = null;       // every tool on the page, and the one the reader touched last: it gets the page-wide shortcuts
   function mount(host, opts) {
     opts = opts || {};
     var presets = opts.presets && opts.presets.length ? opts.presets : PRESETS;
@@ -868,6 +869,17 @@
       return true;
     }
     root_.addEventListener("keydown", toolKey);
+    mounted.push(root_);
+    if (host.closest && host.closest(".pl-modalbody")) lastActive = root_;       // a tool opened in a dialog is the one in front
+    function claim() { lastActive = root_; }
+    root_.addEventListener("pointerdown", claim, true); root_.addEventListener("focusin", claim);
+    function pageKey(e) {                                          // nothing is focused (a fresh page, or a click on empty space): the keys still pick the tool
+      if (!root_.isConnected) { document.removeEventListener("keydown", pageKey); mounted.splice(mounted.indexOf(root_), 1); if (lastActive === root_) lastActive = null; return; }
+      if (e.target !== document.body && e.target !== document.documentElement) return;
+      if ((lastActive && lastActive.isConnected ? lastActive : mounted[0]) !== root_) return;
+      toolKey(e);
+    }
+    document.addEventListener("keydown", pageKey);
     root_.addEventListener("keydown", function (e) {              // a host (a slide deck) must not turn Space in a button, or any key typed in a box, into navigation
       var t = e.target, nav = e.key === " " || e.key.indexOf("Arrow") === 0 || e.key === "Home" || e.key === "End" || e.key === "PageUp" || e.key === "PageDown";
       if (nav && t && ((t.tagName === "INPUT") || (t.tagName === "BUTTON" && e.key === " "))) e.stopPropagation();
