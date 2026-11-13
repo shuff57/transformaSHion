@@ -25,6 +25,21 @@
   /* On a wide screen the Settings sidebar (17rem + 0.5rem gap) is mirrored by an empty column on the left so the grid is centered;
      the page is 2 x 17.5rem wider than the grid, which keeps the size that fits the screen. */
   @media (min-width: 60rem) { #app { max-width: min(90rem, calc(100vh + 17.25rem)); } }
+  /* Footer and the contact dialog (the shared contact.lefthanddev.com form, loaded on first open) */
+  :root { --cf-ink: #141413; --cf-bg: #f5f3ea; --cf-panel: #ffffff; --cf-line: #cfcabd; --cf-field: #8a8577; --cf-accent: #b3520f; --cf-error: #b42318; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cf-ink: #faf9f5; --cf-bg: #26241d; --cf-panel: #2f2c24; --cf-line: #55524a; --cf-field: #8f8b80; --cf-accent: #e0a96d; --cf-error: #ff8a80; } }
+  :root[data-theme="dark"] { --cf-ink: #faf9f5; --cf-bg: #26241d; --cf-panel: #2f2c24; --cf-line: #55524a; --cf-field: #8f8b80; --cf-accent: #e0a96d; --cf-error: #ff8a80; }
+  .foot { max-width: 90rem; margin: 1.5rem auto 0; padding-top: 0.25rem; border-top: 1px solid var(--cf-line); text-align: center; }
+  .foot button { font: inherit; color: var(--cf-accent); background: none; border: 0; padding: 0 0.75rem; min-height: 44px; cursor: pointer; text-decoration: underline; text-underline-offset: 0.2em; }
+  .foot button:focus-visible, .cf-dlg button:focus-visible { outline: 2px solid var(--cf-accent); outline-offset: 2px; border-radius: 4px; }
+  .cf-dlg { box-sizing: border-box; width: min(34rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); padding: 1.25rem; border: 1px solid var(--cf-line); border-radius: 12px; background: var(--cf-panel); color: var(--cf-ink); }
+  .cf-dlg::backdrop { background: rgba(20, 20, 19, 0.45); }
+  .cf-dlg h2 { margin: 0; font-size: 1.4rem; }
+  .cf-dlg header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
+  .cf-dlg header button { font: inherit; color: inherit; background: transparent; border: 1px solid var(--cf-line); border-radius: 8px; min-height: 44px; padding: 0 0.9rem; cursor: pointer; }
+  .cf-dlg p { margin: 0 0 1rem; font-style: italic; }
+  .cf-dlg .contact { --lhd-cf-accent: var(--cf-accent); --lhd-cf-field-bg: var(--cf-bg); --lhd-cf-border: 1px solid var(--cf-field); --lhd-cf-radius: 8px;
+    --lhd-cf-btn-bg: var(--cf-accent); --lhd-cf-btn-fg: var(--cf-bg); --lhd-cf-error: var(--cf-error); --lhd-cf-max: none; }
 </style>
 </head>
 <body>
@@ -140,11 +155,42 @@
   <p class="lede">Plot a figure, then turn on the paper to test a slide, turn or flip.</p>
   <div id="app" class="pl-bare"></div>
 </main>
+<footer class="foot"><button type="button" id="cf-open" aria-haspopup="dialog">Contact</button></footer>
+<dialog class="cf-dlg" id="cf-dlg" aria-labelledby="cf-title">
+  <header><h2 id="cf-title">Contact</h2><button type="button" id="cf-close">Close</button></header>
+  <p>A question or a note about tracing paper? The reply comes to your email.</p>
+  <div class="contact" data-lhd-contact data-site="tracing"></div>
+</dialog>
 <script src="src/plotter.js"></script>
 <script>
   // ?preset=parallel or #parallel picks a starting grid
   var want = new URLSearchParams(location.search).get("preset") || location.hash.replace(/^#/, "");
   window.plotter = Plotter.mount(document.getElementById("app"), { presets: Plotter.presets, preset: want || undefined });
+</script>
+
+<script>
+// Contact: a dialog over the page; the form script is fetched the first time it opens.
+(function () {
+  var dlg = document.getElementById("cf-dlg"), open = document.getElementById("cf-open");
+  if (!dlg || !dlg.showModal) { if (open) open.parentNode.hidden = true; return; }
+  var loaded = false;
+  open.addEventListener("click", function () {
+    if (!loaded) {
+      loaded = true;
+      var s = document.createElement("script");
+      s.src = "https://contact.lefthanddev.com/embed.js";
+      s.defer = true;
+      document.head.appendChild(s);
+    }
+    dlg.showModal();
+  });
+  document.getElementById("cf-close").addEventListener("click", function () { dlg.close(); });
+  dlg.addEventListener("click", function (e) {                    // a click on the backdrop (outside the box) closes it
+    var r = dlg.getBoundingClientRect();
+    if (e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) dlg.close();
+  });
+  dlg.addEventListener("close", function () { open.focus(); });
+})();
 </script>
 
 <script>
